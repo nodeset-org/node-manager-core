@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"time"
 
@@ -88,6 +89,19 @@ type IServiceProvider interface {
 // === ServiceProvider ===
 // =======================
 
+// Options for configuring the service provider
+type ServiceProviderOptions struct {
+	ExecutionClientManager *ExecutionClientManager
+	BeaconClientManager    *BeaconClientManager
+	DockerClient           dclient.APIClient
+	TxManager              *eth.TransactionManager
+	QueryManager           *eth.QueryManager
+	ApiLogger              *log.Logger
+	TasksLogger            *log.Logger
+	LoggerOpts             *log.LoggerOptions
+	NodeWallet             *wallet.Wallet
+}
+
 // A container for all of the various services used by the node service
 type serviceProvider struct {
 	// Services
@@ -107,102 +121,125 @@ type serviceProvider struct {
 	tasksLogger *log.Logger
 }
 
-// Creates a new ServiceProvider instance based on the given config
-func NewServiceProvider(cfg config.IConfig, resources *config.NetworkResources, clientTimeout time.Duration) (IServiceProvider, error) {
+// Creates a new ServiceProvider instance based on the given config, with the provided optional custom service implemnentations.
+// Any services not provided will be created with default implementations.
+// clientTimeout is only used to create the default implementations of the ExecutionClientManager and BeaconClientManager if they are not provided.
+func NewServiceProvider(cfg config.IConfig, resources *config.NetworkResources, clientTimeout time.Duration, opts ServiceProviderOptions) (IServiceProvider, error) {
 	// EC Manager
-	var ecManager *ExecutionClientManager
-	primaryEcUrl, fallbackEcUrl := cfg.GetExecutionClientUrls()
-	primaryEc, err := ethclient.Dial(primaryEcUrl)
-	if err != nil {
-		return nil, fmt.Errorf("error connecting to primary EC at [%s]: %w", primaryEcUrl, err)
-	}
-	if fallbackEcUrl != "" {
-		// Get the fallback EC url, if applicable
-		fallbackEc, err := ethclient.Dial(fallbackEcUrl)
+	if opts.ExecutionClientManager == nil {
+		primaryEcUrl, fallbackEcUrl := cfg.GetExecutionClientUrls()
+		primaryEc, err := ethclient.Dial(primaryEcUrl)
 		if err != nil {
-			return nil, fmt.Errorf("error connecting to fallback EC at [%s]: %w", fallbackEcUrl, err)
+			return nil, fmt.Errorf("error connecting to primary EC at [%s]: %w", primaryEcUrl, err)
 		}
-		ecManager = NewExecutionClientManagerWithFallback(primaryEc, fallbackEc, resources.ChainID, clientTimeout)
-	} else {
-		ecManager = NewExecutionClientManager(primaryEc, resources.ChainID, clientTimeout)
+		if fallbackEcUrl != "" {
+			// Get the fallback EC url, if applicable
+			fallbackEc, err := ethclient.Dial(fallbackEcUrl)
+			if err != nil {
+				return nil, fmt.Errorf("error connecting to fallback EC at [%s]: %w", fallbackEcUrl, err)
+			}
+			opts.ExecutionClientManager = NewExecutionClientManagerWithFallback(primaryEc, fallbackEc, resources.ChainID, clientTimeout)
+		} else {
+			opts.ExecutionClientManager = NewExecutionClientManager(primaryEc, resources.ChainID, clientTimeout)
+		}
+
 	}
 
 	// Beacon manager
-	var bcManager *BeaconClientManager
-	primaryBnUrl, fallbackBnUrl := cfg.GetBeaconNodeUrls()
-	primaryBc := client.NewStandardHttpClient(primaryBnUrl, clientTimeout)
-	if fallbackBnUrl != "" {
-		fallbackBc := client.NewStandardHttpClient(fallbackBnUrl, clientTimeout)
-		bcManager = NewBeaconClientManagerWithFallback(primaryBc, fallbackBc, resources.ChainID, clientTimeout)
-	} else {
-		bcManager = NewBeaconClientManager(primaryBc, resources.ChainID, clientTimeout)
+	if opts.BeaconClientManager == nil {
+		primaryBnUrl, fallbackBnUrl := cfg.GetBeaconNodeUrls()
+		primaryBc := client.NewStandardHttpClient(primaryBnUrl, clientTimeout)
+		if fallbackBnUrl != "" {
+			fallbackBc := client.NewStandardHttpClient(fallbackBnUrl, clientTimeout)
+			opts.BeaconClientManager = NewBeaconClientManagerWithFallback(primaryBc, fallbackBc, resources.ChainID, clientTimeout)
+		} else {
+			opts.BeaconClientManager = NewBeaconClientManager(primaryBc, resources.ChainID, clientTimeout)
+		}
 	}
 
-	// Docker client
-	dockerClient, err := dclient.NewClientWithOpts(dclient.WithVersion(DockerApiVersion))
-	if err != nil {
-		return nil, fmt.Errorf("error creating Docker client: %w", err)
-	}
-
-	return NewServiceProviderWithCustomServices(cfg, resources, ecManager, bcManager, dockerClient)
-}
-
-// Creates a new ServiceProvider instance with custom services instead of creating them from the config
-func NewServiceProviderWithCustomServices(cfg config.IConfig, resources *config.NetworkResources, ecManager *ExecutionClientManager, bcManager *BeaconClientManager, dockerClient dclient.APIClient) (IServiceProvider, error) {
 	// Make the API logger
-	loggerOpts := cfg.GetLoggerOptions()
-	apiLogger, err := log.NewLogger(cfg.GetApiLogFilePath(), loggerOpts)
-	if err != nil {
-		return nil, fmt.Errorf("error creating API logger: %w", err)
+	if opts.LoggerOpts == nil {
+		loggerOpts := cfg.GetLoggerOptions()
+		opts.LoggerOpts = &loggerOpts
+	}
+	if opts.ApiLogger == nil {
+		apiLogger, err := log.NewLogger(cfg.GetApiLogFilePath(), *opts.LoggerOpts)
+		if err != nil {
+			return nil, fmt.Errorf("error creating API logger: %w", err)
+		}
+		opts.ApiLogger = apiLogger
 	}
 
 	// Make the tasks logger
-	tasksLogger, err := log.NewLogger(cfg.GetTasksLogFilePath(), loggerOpts)
-	if err != nil {
-		return nil, fmt.Errorf("error creating tasks logger: %w", err)
+	if opts.TasksLogger == nil {
+		tasksLogger, err := log.NewLogger(cfg.GetTasksLogFilePath(), *opts.LoggerOpts)
+		if err != nil {
+			return nil, fmt.Errorf("error creating tasks logger: %w", err)
+		}
+		opts.TasksLogger = tasksLogger
+	}
+
+	// Docker client
+	if opts.DockerClient == nil ||
+		(reflect.ValueOf(opts.DockerClient).Kind() == reflect.Ptr && reflect.ValueOf(opts.DockerClient).IsNil()) {
+		dockerClient, err := dclient.NewClientWithOpts(dclient.WithVersion(DockerApiVersion))
+		if err != nil {
+			return nil, fmt.Errorf("error creating Docker client: %w", err)
+		}
+		opts.DockerClient = dockerClient
 	}
 
 	// Wallet
-	nodeAddressPath := filepath.Join(cfg.GetNodeAddressFilePath())
-	walletDataPath := filepath.Join(cfg.GetWalletFilePath())
-	passwordPath := filepath.Join(cfg.GetPasswordFilePath())
-	nodeWallet, err := wallet.NewWallet(tasksLogger.Logger, walletDataPath, nodeAddressPath, passwordPath, resources.ChainID)
-	if err != nil {
-		return nil, fmt.Errorf("error creating node wallet: %w", err)
+	if opts.NodeWallet == nil {
+		nodeAddressPath := filepath.Join(cfg.GetNodeAddressFilePath())
+		walletDataPath := filepath.Join(cfg.GetWalletFilePath())
+		passwordPath := filepath.Join(cfg.GetPasswordFilePath())
+		nodeWallet, err := wallet.NewWallet(opts.TasksLogger.Logger, walletDataPath, nodeAddressPath, passwordPath, resources.ChainID)
+		if err != nil {
+			return nil, fmt.Errorf("error creating node wallet: %w", err)
+		}
+		opts.NodeWallet = nodeWallet
 	}
 
 	// TX Manager
-	txMgr, err := eth.NewTransactionManager(ecManager, eth.DefaultSafeGasBuffer, eth.DefaultSafeGasMultiplier)
-	if err != nil {
-		return nil, fmt.Errorf("error creating transaction manager: %w", err)
+	if opts.TxManager == nil {
+		txMgr, err := eth.NewTransactionManager(opts.ExecutionClientManager, eth.DefaultSafeGasBuffer, eth.DefaultSafeGasMultiplier)
+		if err != nil {
+			return nil, fmt.Errorf("error creating transaction manager: %w", err)
+		}
+		opts.TxManager = txMgr
 	}
 
-	// Query Manager - set the default concurrent run limit to half the CPUs so the EC doesn't get overwhelmed
-	concurrentCallLimit := runtime.NumCPU() / 2
-	if concurrentCallLimit < 1 {
-		concurrentCallLimit = 1
+	// Query Manager
+	if opts.QueryManager == nil {
+		// Set the default concurrent run limit to half the CPUs so the EC doesn't get overwhelmed
+		concurrentCallLimit := runtime.NumCPU() / 2
+		if concurrentCallLimit < 1 {
+			concurrentCallLimit = 1
+		}
+		queryMgr := eth.NewQueryManager(opts.ExecutionClientManager, resources.MulticallAddress, concurrentCallLimit)
+		opts.QueryManager = queryMgr
 	}
-	queryMgr := eth.NewQueryManager(ecManager, resources.MulticallAddress, concurrentCallLimit)
 
 	// Context for handling task cancellation during shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// Log startup
-	apiLogger.Info("Starting API logger.")
-	tasksLogger.Info("Starting Tasks logger.")
+	opts.ApiLogger.Info("Starting API logger.")
+	opts.TasksLogger.Info("Starting Tasks logger.")
 
 	// Create the provider
 	provider := &serviceProvider{
-		nodeWallet:  nodeWallet,
-		ecManager:   ecManager,
-		bcManager:   bcManager,
-		docker:      dockerClient,
-		txMgr:       txMgr,
-		queryMgr:    queryMgr,
+		nodeWallet:  opts.NodeWallet,
+		ecManager:   opts.ExecutionClientManager,
+		bcManager:   opts.BeaconClientManager,
+		docker:      opts.DockerClient,
+		txMgr:       opts.TxManager,
+		queryMgr:    opts.QueryManager,
 		ctx:         ctx,
 		cancel:      cancel,
-		apiLogger:   apiLogger,
-		tasksLogger: tasksLogger,
+		apiLogger:   opts.ApiLogger,
+		tasksLogger: opts.ApiLogger,
 	}
 	return provider, nil
 }
