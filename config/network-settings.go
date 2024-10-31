@@ -57,6 +57,9 @@ type NetworkResources struct {
 
 	// The FlashBots Protect RPC endpoint
 	FlashbotsProtectUrl string `yaml:"flashbotsProtectUrl" json:"flashbotsProtectUrl"`
+
+	// The MEV Blocker RPC endpoint
+	MevBlockerUrl string `yaml:"mevBlockerUrl" json:"mevBlockerUrl"`
 }
 
 // NetworkSettings contains all of the settings for a given Ethereum network
