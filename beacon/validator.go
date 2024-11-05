@@ -3,8 +3,10 @@ package beacon
 import (
 	"encoding/hex"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
+	"github.com/rocket-pool/node-manager-core/utils"
 )
 
 // Encrypted validator keystore following the EIP-2335 standard
@@ -53,4 +55,28 @@ func (b *ByteArray) UnmarshalJSON(data []byte) error {
 	// Set value and return
 	*b = value
 	return nil
+}
+
+// Slashing protection data following the EIP-3076 standard
+// (https://eips.ethereum.org/EIPS/eip-3076)
+type SlashingProtectionData struct {
+	Metadata struct {
+		InterchangeFormatVersion utils.Uinteger `json:"interchange_format_version"`
+		GenesisValidatorsRoot    common.Hash    `json:"genesis_validators_root"`
+	} `json:"metadata"`
+
+	Data []struct {
+		Pubkey ValidatorPubkey `json:"pubkey"`
+
+		SignedBlocks []struct {
+			Slot        utils.Uinteger `json:"slot"`
+			SigningRoot common.Hash    `json:"signing_root,omitempty"`
+		} `json:"signed_blocks"`
+
+		SignedAttestations []struct {
+			SourceEpoch utils.Uinteger `json:"source_epoch"`
+			TargetEpoch utils.Uinteger `json:"target_epoch"`
+			SigningRoot common.Hash    `json:"signing_root,omitempty"`
+		} `json:"signed_attestations"`
+	} `json:"data"`
 }
