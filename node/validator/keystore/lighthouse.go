@@ -1,7 +1,9 @@
 package keystore
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -38,21 +40,43 @@ func (ks *LighthouseKeystoreManager) GetKeystoreDir() string {
 	return ks.keystoreDir
 }
 
-// Store a validator key
-func (ks *LighthouseKeystoreManager) StoreValidatorKey(key *eth2types.BLSPrivateKey, derivationPath string) error {
+// Get all the validator pubkeys stored in the keystore
+func (ks *LighthouseKeystoreManager) GetAllPubkeys() ([]beacon.ValidatorPubkey, error) {
+	// Read the validator directory
+	validatorDir := filepath.Join(ks.keystoreDir, ks.validatorsDir)
+	entries, err := os.ReadDir(validatorDir)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("error reading validator directory: %w", err)
+	}
+
+	// Get all the pubkeys
+	var pubkeys []beacon.ValidatorPubkey
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		dirName := entry.Name()
+		pubkey, err := beacon.HexToValidatorPubkey(dirName)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing validator pubkey [%s]: %w", dirName, err)
+		}
+		pubkeys = append(pubkeys, pubkey)
+	}
+	return pubkeys, nil
+}
+
+// Encrypt a validator key with the provided password
+func (ks *LighthouseKeystoreManager) EncryptValidatorKey(key *eth2types.BLSPrivateKey, derivationPath string, password string) (beacon.ValidatorKeystore, error) {
 	// Get validator pubkey
 	pubkey := beacon.ValidatorPubkey(key.PublicKey().Marshal())
-
-	// Create a new password
-	password, err := utils.GenerateRandomPassword()
-	if err != nil {
-		return fmt.Errorf("error generating random password: %w", err)
-	}
 
 	// Encrypt key
 	encryptedKey, err := ks.encryptor.Encrypt(key.Marshal(), password)
 	if err != nil {
-		return fmt.Errorf("error encrypting validator key: %w", err)
+		return beacon.ValidatorKeystore{}, fmt.Errorf("error encrypting validator key: %w", err)
 	}
 
 	// Create key store
@@ -64,14 +88,19 @@ func (ks *LighthouseKeystoreManager) StoreValidatorKey(key *eth2types.BLSPrivate
 		Pubkey:  pubkey,
 	}
 
+	return keyStore, nil
+}
+
+// Store a validator keystore on disk
+func (ks *LighthouseKeystoreManager) StoreValidatorKeystore(keystore beacon.ValidatorKeystore, password string) error {
 	// Encode key store
-	keyStoreBytes, err := json.Marshal(keyStore)
+	keyStoreBytes, err := json.Marshal(keystore)
 	if err != nil {
 		return fmt.Errorf("error encoding validator key: %w", err)
 	}
 
 	// Get secret file path
-	secretFilePath := filepath.Join(ks.keystoreDir, ks.secretsDir, pubkey.HexWithPrefix())
+	secretFilePath := ks.getSecretFilePath(keystore.Pubkey)
 
 	// Create secrets dir
 	if err := os.MkdirAll(filepath.Dir(secretFilePath), DirMode); err != nil {
@@ -84,7 +113,7 @@ func (ks *LighthouseKeystoreManager) StoreValidatorKey(key *eth2types.BLSPrivate
 	}
 
 	// Get key file path
-	keyFilePath := filepath.Join(ks.keystoreDir, ks.validatorsDir, pubkey.HexWithPrefix(), ks.keyFileName)
+	keyFilePath := ks.getKeystoreFilePath(keystore.Pubkey)
 
 	// Create key dir
 	if err := os.MkdirAll(filepath.Dir(keyFilePath), DirMode); err != nil {
@@ -98,10 +127,32 @@ func (ks *LighthouseKeystoreManager) StoreValidatorKey(key *eth2types.BLSPrivate
 	return nil
 }
 
+// Store a validator key
+func (ks *LighthouseKeystoreManager) StoreValidatorKey(key *eth2types.BLSPrivateKey, derivationPath string) error {
+	// Create a new password
+	password, err := utils.GenerateRandomPassword()
+	if err != nil {
+		return fmt.Errorf("error generating random password: %w", err)
+	}
+
+	// Encrypt the key
+	keystore, err := ks.EncryptValidatorKey(key, derivationPath, password)
+	if err != nil {
+		return fmt.Errorf("error encrypting validator key: %w", err)
+	}
+
+	// Store the keystore
+	err = ks.StoreValidatorKeystore(keystore, password)
+	if err != nil {
+		return fmt.Errorf("error storing validator keystore: %w", err)
+	}
+	return nil
+}
+
 // Load a private key
 func (ks *LighthouseKeystoreManager) LoadValidatorKey(pubkey beacon.ValidatorPubkey) (*eth2types.BLSPrivateKey, error) {
 	// Get key file path
-	keyFilePath := filepath.Join(ks.keystoreDir, ks.validatorsDir, pubkey.HexWithPrefix(), ks.keyFileName)
+	keyFilePath := ks.getKeystoreFilePath(pubkey)
 
 	// Read the key file
 	_, err := os.Stat(keyFilePath)
@@ -123,7 +174,7 @@ func (ks *LighthouseKeystoreManager) LoadValidatorKey(pubkey beacon.ValidatorPub
 	}
 
 	// Get secret file path
-	secretFilePath := filepath.Join(ks.keystoreDir, ks.secretsDir, pubkey.HexWithPrefix())
+	secretFilePath := ks.getSecretFilePath(pubkey)
 
 	// Read secret from disk
 	_, err = os.Stat(secretFilePath)
@@ -155,4 +206,38 @@ func (ks *LighthouseKeystoreManager) LoadValidatorKey(pubkey beacon.ValidatorPub
 	}
 
 	return privateKey, nil
+}
+
+// Removes the validator key from disk. If the key didn't exist, returns nil.
+func (ks *LighthouseKeystoreManager) RemoveValidatorKey(pubkey beacon.ValidatorPubkey) error {
+	// Get key file path
+	keyFilePath := ks.getKeystoreFilePath(pubkey)
+
+	// Remove the key's directory
+	err := os.RemoveAll(filepath.Dir(keyFilePath))
+	if err != nil {
+		return fmt.Errorf("error removing validator key file [%s]: %w", keyFilePath, err)
+	}
+
+	// Get secret file path
+	secretFilePath := ks.getSecretFilePath(pubkey)
+
+	// Remove the secret file
+	err = os.Remove(secretFilePath)
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("error removing validator secret file [%s]: %w", secretFilePath, err)
+		}
+	}
+	return nil
+}
+
+// Get the keystore path for a pubkey
+func (ks *LighthouseKeystoreManager) getKeystoreFilePath(pubkey beacon.ValidatorPubkey) string {
+	return filepath.Join(ks.keystoreDir, ks.validatorsDir, pubkey.HexWithPrefix(), ks.keyFileName)
+}
+
+// Get the secret file path for a pubkey
+func (ks *LighthouseKeystoreManager) getSecretFilePath(pubkey beacon.ValidatorPubkey) string {
+	return filepath.Join(ks.keystoreDir, ks.secretsDir, pubkey.HexWithPrefix())
 }
