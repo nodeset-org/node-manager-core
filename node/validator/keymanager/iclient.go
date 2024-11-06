@@ -1,7 +1,9 @@
 package keymanager
 
 import (
+	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rocket-pool/node-manager-core/beacon"
@@ -21,23 +23,23 @@ type IKeyManagerClient interface {
 	GetJwtToken() string
 
 	// Get the list of pubkeys that are loaded in the key manager
-	GetLoadedKeys() ([]GetKeystoreData, error)
+	GetLoadedKeys(ctx context.Context, logger *slog.Logger) ([]GetKeystoreData, error)
 
 	// Import a list of keys into the key manager
-	ImportKeys(keystores []beacon.ValidatorKeystore, passwords []string) ([]ImportKeystoreData, error)
+	ImportKeys(ctx context.Context, logger *slog.Logger, keystores []beacon.ValidatorKeystore, passwords []string, slashingProtection *beacon.SlashingProtectionData) ([]ImportKeystoreData, error)
 
 	// Delete keys from the key manager
-	DeleteKeys(pubkeys []beacon.ValidatorPubkey) ([]DeleteKeystoreData, error)
+	DeleteKeys(ctx context.Context, logger *slog.Logger, pubkeys []beacon.ValidatorPubkey) ([]DeleteKeystoreData, error)
 
 	// Get the graffiti for a validator
-	GetGraffitiForValidator(pubkey beacon.ValidatorPubkey) (GetGraffitiData, error)
+	GetGraffitiForValidator(ctx context.Context, logger *slog.Logger, pubkey beacon.ValidatorPubkey) (GetGraffitiData, error)
 
 	// Set the graffiti for a validator
-	SetGraffitiForValidator(pubkey beacon.ValidatorPubkey, graffiti string) error
+	SetGraffitiForValidator(ctx context.Context, logger *slog.Logger, pubkey beacon.ValidatorPubkey, graffiti string) error
 
 	// Get the fee recipient for a validator
-	GetFeeRecipientForValidator(pubkey beacon.ValidatorPubkey) (GetFeeRecipientData, error)
+	GetFeeRecipientForValidator(ctx context.Context, logger *slog.Logger, pubkey beacon.ValidatorPubkey) (GetFeeRecipientData, error)
 
 	// Set the fee recipient for a validator
-	SetFeeRecipientForValidator(pubkey beacon.ValidatorPubkey, feeRecipient common.Address) error
+	SetFeeRecipientForValidator(ctx context.Context, logger *slog.Logger, pubkey beacon.ValidatorPubkey, feeRecipient common.Address) error
 }
