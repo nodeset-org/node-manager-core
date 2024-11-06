@@ -28,13 +28,13 @@ func GetPrivateKey(mnemonic string, path string) (*eth2types.BLSPrivateKey, erro
 
 	// Initialize BLS support
 	if err := InitializeBls(); err != nil {
-		return nil, fmt.Errorf("Could not initialize BLS library: %w", err)
+		return nil, fmt.Errorf("could not initialize BLS library: %w", err)
 	}
 
 	// Get private key
 	privateKey, err := eth2util.PrivateKeyFromSeedAndPath(seed, path)
 	if err != nil {
-		return nil, fmt.Errorf("Could not get validator private key for [%s]: %w", path, err)
+		return nil, fmt.Errorf("could not get validator private key for [%s]: %w", path, err)
 	}
 
 	// Return

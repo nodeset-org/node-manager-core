@@ -21,6 +21,18 @@ type ValidatorManager struct {
 	lock             *sync.Mutex
 }
 
+// Information about a validator key stored in the manager
+type StoredValidatorKeyInfo struct {
+	// The validator pubkey
+	Pubkey beacon.ValidatorPubkey
+
+	// Whether the key is stored on disk in any of the keystores
+	IsStoredOnDisk bool
+
+	// Whether the key is currently loaded in the Validator Client
+	IsLoadedInValidatorClient bool
+}
+
 // Creates a new manager for validator keys and keystores.
 // If you have multiple Validator Clients, you should create a new ValidatorManager for each one.
 // validatorPath is the path to the base directory for all individual Validator Client resources, such as keystores and slashing databases.
@@ -41,7 +53,47 @@ func NewValidatorManager(validatorPath string, keyManager keymanager.IKeyManager
 	return mgr
 }
 
-// Stores a validator key into all of the manager's client keystores on disk, but does not upload to the
+// Gets all the validator pubkeys stored in all of the keystores on disk, and the keys stored on the Validator Client.
+func (m *ValidatorManager) GetAllKeys(ctx context.Context, logger *slog.Logger) (map[beacon.ValidatorPubkey]StoredValidatorKeyInfo, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	keys := map[beacon.ValidatorPubkey]StoredValidatorKeyInfo{}
+
+	// Get the keys stored on disk
+	for client, mgr := range m.keystoreManagers {
+		pubkeys, err := mgr.GetAllPubkeys()
+		if err != nil {
+			return nil, fmt.Errorf("error getting validator pubkeys from keystore for %s: %w", string(client), err)
+		}
+		for _, pubkey := range pubkeys {
+			key, exists := keys[pubkey]
+			if !exists {
+				key = StoredValidatorKeyInfo{Pubkey: pubkey}
+			}
+			key.IsStoredOnDisk = true
+			keys[pubkey] = key
+		}
+	}
+
+	// Get the keys stored in the Validator Client
+	data, err := m.keyMgr.GetLoadedKeys(ctx, logger)
+	if err != nil {
+		return nil, fmt.Errorf("error getting loaded validator keys from key manager: %w", err)
+	}
+	for _, d := range data {
+		pubkey := d.Pubkey
+		key, exists := keys[pubkey]
+		if !exists {
+			key = StoredValidatorKeyInfo{Pubkey: pubkey}
+		}
+		key.IsLoadedInValidatorClient = true
+		keys[pubkey] = key
+	}
+
+	return keys, nil
+}
+
+// Stores a validator key into all of the manager's client keystores on disk, but does not upload to the Validator Client
 func (m *ValidatorManager) StoreKey(key *types.BLSPrivateKey, derivationPath string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -111,6 +163,41 @@ func (m *ValidatorManager) LoadKey(pubkey beacon.ValidatorPubkey) (*types.BLSPri
 		// If there were no errors, the key just didn't exist
 		return nil, fmt.Errorf("couldn't find the key for validator %s in any of the validator manager's keystores", pubkey.Hex())
 	}
+}
+
+// Deletes a validator key from the manager's client keystores and the Validator Client's key manager
+func (m *ValidatorManager) DeleteKey(ctx context.Context, logger *slog.Logger, pubkey beacon.ValidatorPubkey) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	// Try deleting the key from all of the keystores, caching errors but not breaking on them
+	errors := []string{}
+	for _, mgr := range m.keystoreManagers {
+		err := mgr.RemoveValidatorKey(pubkey)
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+	}
+	if len(errors) > 0 {
+		// If there were errors, return them
+		return fmt.Errorf("encountered the following errors while trying to delete the key for validator %s:\n%s", pubkey.Hex(), strings.Join(errors, "\n"))
+	}
+
+	// Delete the key from the key manager
+	data, err := m.keyMgr.DeleteKeys(ctx, logger, []beacon.ValidatorPubkey{pubkey})
+	if err != nil {
+		return fmt.Errorf("error deleting validator key from key manager: %w", err)
+	}
+	for _, d := range data {
+		switch d.Status {
+		case keymanager.DeleteKeystoreStatus_Error:
+			return fmt.Errorf("deleting validator key from key manager failed: %s", d.Message)
+		default:
+			// Ignore everything else
+			continue
+		}
+	}
+	return nil
 }
 
 // Implementation for storing a key in the manager's client keystores on disk
