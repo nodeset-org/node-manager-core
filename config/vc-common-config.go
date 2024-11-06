@@ -12,6 +12,9 @@ type ValidatorClientCommonConfig struct {
 	// Toggle for enabling doppelganger detection
 	DoppelgangerDetection Parameter[bool]
 
+	// The API port for the key manager
+	KeyManagerPort Parameter[uint16]
+
 	// The port to expose VC metrics on
 	MetricsPort Parameter[uint16]
 }
@@ -50,6 +53,20 @@ func NewValidatorClientCommonConfig() *ValidatorClientCommonConfig {
 			},
 		},
 
+		KeyManagerPort: Parameter[uint16]{
+			ParameterCommon: &ParameterCommon{
+				ID:                 ids.KeyManagerPortID,
+				Name:               "Key Manager Port",
+				Description:        "The port your Validator Client's key manager API should listen on.",
+				AffectsContainers:  []ContainerID{ContainerID_ValidatorClient},
+				CanBeBlank:         false,
+				OverwriteOnUpgrade: false,
+			},
+			Default: map[Network]uint16{
+				Network_All: 5062,
+			},
+		},
+
 		MetricsPort: Parameter[uint16]{
 			ParameterCommon: &ParameterCommon{
 				ID:                 ids.MetricsPortID,
@@ -76,6 +93,7 @@ func (cfg *ValidatorClientCommonConfig) GetParameters() []IParameter {
 	return []IParameter{
 		&cfg.Graffiti,
 		&cfg.DoppelgangerDetection,
+		&cfg.KeyManagerPort,
 		&cfg.MetricsPort,
 	}
 }
