@@ -34,7 +34,7 @@ type StandardKeyManagerClientOptions struct {
 }
 
 // Creates a new StandardKeyManagerClient instance, generating the JWT key if it doesn't exist and loading it
-func NewStandardKeyManagerClient(vcEndpoint string, client *http.Client, jwtFile string, opts *StandardKeyManagerClientOptions) (*StandardKeyManagerClient, error) {
+func NewStandardKeyManagerClient(vcEndpoint string, jwtFile string, opts *StandardKeyManagerClientOptions) (*StandardKeyManagerClient, error) {
 	// Default options
 	if opts == nil {
 		opts = &StandardKeyManagerClientOptions{
@@ -51,7 +51,7 @@ func NewStandardKeyManagerClient(vcEndpoint string, client *http.Client, jwtFile
 	// Return the new client
 	return &StandardKeyManagerClient{
 		vcEndpoint: vcEndpoint,
-		client:     client,
+		client:     &http.Client{},
 		jwtFile:    jwtFile,
 		jwtToken:   token,
 	}, nil
