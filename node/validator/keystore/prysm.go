@@ -81,29 +81,6 @@ func (ks *PrysmKeystoreManager) GetAllPubkeys() ([]beacon.ValidatorPubkey, error
 	return pubkeys, nil
 }
 
-// Encrypt a validator key with the provided password
-func (ks *PrysmKeystoreManager) EncryptValidatorKey(key *eth2types.BLSPrivateKey, derivationPath string, password string) (beacon.ValidatorKeystore, error) { // Initialize the account store
-	// Get validator pubkey
-	pubkey := beacon.ValidatorPubkey(key.PublicKey().Marshal())
-
-	// Encrypt key
-	encryptedKey, err := ks.encryptor.Encrypt(key.Marshal(), password)
-	if err != nil {
-		return beacon.ValidatorKeystore{}, fmt.Errorf("error encrypting validator key: %w", err)
-	}
-
-	// Create key store
-	keyStore := beacon.ValidatorKeystore{
-		Crypto:  encryptedKey,
-		Version: ks.encryptor.Version(),
-		UUID:    uuid.New(),
-		Path:    derivationPath,
-		Pubkey:  pubkey,
-	}
-
-	return keyStore, nil
-}
-
 // Store a validator keystore on disk
 func (ks *PrysmKeystoreManager) StoreValidatorKeystore(keystore beacon.ValidatorKeystore, password string) error {
 	// Initialize the account store

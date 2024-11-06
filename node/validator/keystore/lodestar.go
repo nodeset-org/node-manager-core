@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"github.com/goccy/go-json"
-	"github.com/google/uuid"
 	"github.com/rocket-pool/node-manager-core/beacon"
 	"github.com/rocket-pool/node-manager-core/utils"
 	eth2types "github.com/wealdtech/go-eth2-types/v2"
@@ -68,29 +67,6 @@ func (ks *LodestarKeystoreManager) GetAllPubkeys() ([]beacon.ValidatorPubkey, er
 	return pubkeys, nil
 }
 
-// Encrypt a validator key with the provided password
-func (ks *LodestarKeystoreManager) EncryptValidatorKey(key *eth2types.BLSPrivateKey, derivationPath string, password string) (beacon.ValidatorKeystore, error) {
-	// Get validator pubkey
-	pubkey := beacon.ValidatorPubkey(key.PublicKey().Marshal())
-
-	// Encrypt key
-	encryptedKey, err := ks.encryptor.Encrypt(key.Marshal(), password)
-	if err != nil {
-		return beacon.ValidatorKeystore{}, fmt.Errorf("error encrypting validator key: %w", err)
-	}
-
-	// Create key store
-	keyStore := beacon.ValidatorKeystore{
-		Crypto:  encryptedKey,
-		Version: ks.encryptor.Version(),
-		UUID:    uuid.New(),
-		Path:    derivationPath,
-		Pubkey:  pubkey,
-	}
-
-	return keyStore, nil
-}
-
 // Store a validator keystore on disk
 func (ks *LodestarKeystoreManager) StoreValidatorKeystore(keystore beacon.ValidatorKeystore, password string) error {
 	// Encode key store
@@ -136,7 +112,7 @@ func (ks *LodestarKeystoreManager) StoreValidatorKey(key *eth2types.BLSPrivateKe
 	}
 
 	// Encrypt the key
-	keystore, err := ks.EncryptValidatorKey(key, derivationPath, password)
+	keystore, err := EncryptValidatorKey(key, derivationPath, password)
 	if err != nil {
 		return fmt.Errorf("error encrypting validator key: %w", err)
 	}

@@ -17,13 +17,10 @@ type IKeystoreManager interface {
 	// Get all the validator pubkeys stored in the keystore
 	GetAllPubkeys() ([]beacon.ValidatorPubkey, error)
 
-	// Encrypt a validator key with the provided password
-	EncryptValidatorKey(key *eth2types.BLSPrivateKey, derivationPath string, password string) (beacon.ValidatorKeystore, error)
-
 	// Store a validator keystore on disk
 	StoreValidatorKeystore(keystore beacon.ValidatorKeystore, password string) error
 
-	// Store a validator key on disk
+	// Store a validator key on disk as an encrypted keystore, along with a randomly generated password for it
 	StoreValidatorKey(key *eth2types.BLSPrivateKey, derivationPath string) error
 
 	// Load a validator key from disk corresponding to the provided pubkey

@@ -6,34 +6,45 @@ import (
 	"sync"
 
 	"github.com/rocket-pool/node-manager-core/beacon"
+	"github.com/rocket-pool/node-manager-core/config"
+	"github.com/rocket-pool/node-manager-core/node/validator/keymanager"
 	"github.com/rocket-pool/node-manager-core/node/validator/keystore"
+	"github.com/rocket-pool/node-manager-core/utils"
 	types "github.com/wealdtech/go-eth2-types/v2"
 )
 
 type ValidatorManager struct {
-	keystoreManagers map[string]keystore.IKeystoreManager
+	keystoreManagers map[config.BeaconNode]keystore.IKeystoreManager
+	keyMgr           keymanager.IKeyManagerClient
 	lock             *sync.Mutex
 }
 
-func NewValidatorManager(validatorPath string) *ValidatorManager {
+// Creates a new manager for validator keys and keystores.
+// If you have multiple Validator Clients, you should create a new ValidatorManager for each one.
+// validatorPath is the path to the base directory for all individual Validator Client resources, such as keystores and slashing databases.
+// keyManager is the client for the Validator Client's key manager API.
+// You will need to create it using the appropriate client for your Validator Client.
+func NewValidatorManager(validatorPath string, keyManager keymanager.IKeyManagerClient) *ValidatorManager {
 	mgr := &ValidatorManager{
-		keystoreManagers: map[string]keystore.IKeystoreManager{
-			"lighthouse": keystore.NewLighthouseKeystoreManager(validatorPath),
-			"lodestar":   keystore.NewLodestarKeystoreManager(validatorPath),
-			"nimbus":     keystore.NewNimbusKeystoreManager(validatorPath),
-			"prysm":      keystore.NewPrysmKeystoreManager(validatorPath),
-			"teku":       keystore.NewTekuKeystoreManager(validatorPath),
+		keystoreManagers: map[config.BeaconNode]keystore.IKeystoreManager{
+			config.BeaconNode_Lighthouse: keystore.NewLighthouseKeystoreManager(validatorPath),
+			config.BeaconNode_Lodestar:   keystore.NewLodestarKeystoreManager(validatorPath),
+			config.BeaconNode_Nimbus:     keystore.NewNimbusKeystoreManager(validatorPath),
+			config.BeaconNode_Prysm:      keystore.NewPrysmKeystoreManager(validatorPath),
+			config.BeaconNode_Teku:       keystore.NewTekuKeystoreManager(validatorPath),
 		},
-		lock: &sync.Mutex{},
+		keyMgr: keyManager,
+		lock:   &sync.Mutex{},
 	}
 	return mgr
 }
 
-// Stores a validator key into all of the manager's client keystores
+// Stores a validator key into all of the manager's client keystores and uploads it to the VC's key manager
 func (m *ValidatorManager) StoreKey(key *types.BLSPrivateKey, derivationPath string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	// Store the key in all of the keystores
 	for name, mgr := range m.keystoreManagers {
 		err := mgr.StoreValidatorKey(key, derivationPath)
 		if err != nil {
@@ -41,6 +52,32 @@ func (m *ValidatorManager) StoreKey(key *types.BLSPrivateKey, derivationPath str
 			return fmt.Errorf("error saving validator key %s (path %s) to the %s keystore: %w", pubkey.HexWithPrefix(), derivationPath, name, err)
 		}
 	}
+
+	// Generate a keystore and password
+	password, err := utils.GenerateRandomPassword()
+	if err != nil {
+		return fmt.Errorf("error generating random password: %w", err)
+	}
+	ks, err := keystore.EncryptValidatorKey(key, derivationPath, password)
+	if err != nil {
+		return fmt.Errorf("error encrypting validator key: %w", err)
+	}
+
+	// Upload the key to the key manager
+	data, err := m.keyMgr.ImportKeys([]beacon.ValidatorKeystore{ks}, []string{password})
+	if err != nil {
+		return fmt.Errorf("error uploading validator key to key manager: %w", err)
+	}
+	for _, d := range data {
+		switch d.Status {
+		case keymanager.ImportKeystoreStatus_Error:
+			return fmt.Errorf("uploading validator key to key manager failed: %s", d.Message)
+		default:
+			// Ignore duplicate keys, since this function doesn't check for duplicates
+			continue
+		}
+	}
+
 	return nil
 }
 
@@ -51,8 +88,8 @@ func (m *ValidatorManager) LoadKey(pubkey beacon.ValidatorPubkey) (*types.BLSPri
 
 	errors := []string{}
 	// Try loading the key from all of the keystores, caching errors but not breaking on them
-	for name := range m.keystoreManagers {
-		key, err := m.keystoreManagers[name].LoadValidatorKey(pubkey)
+	for _, mgr := range m.keystoreManagers {
+		key, err := mgr.LoadValidatorKey(pubkey)
 		if err != nil {
 			errors = append(errors, err.Error())
 		}
