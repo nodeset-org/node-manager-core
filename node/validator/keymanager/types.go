@@ -50,6 +50,9 @@ type KeyManagerResponse[DataType any] struct {
 
 	// A message if the response is an error
 	Message string `json:"message"`
+
+	// Slashing protection, only returned by some calls
+	SlashingProtection beacon.SlashingProtectionData `json:"slashing_protection,omitempty"`
 }
 
 // Data returned when a keystore loaded in the key manager

@@ -29,7 +29,7 @@ type IKeyManagerClient interface {
 	ImportKeys(ctx context.Context, logger *slog.Logger, keystores []beacon.ValidatorKeystore, passwords []string, slashingProtection *beacon.SlashingProtectionData) ([]ImportKeystoreData, error)
 
 	// Delete keys from the key manager
-	DeleteKeys(ctx context.Context, logger *slog.Logger, pubkeys []beacon.ValidatorPubkey) ([]DeleteKeystoreData, error)
+	DeleteKeys(ctx context.Context, logger *slog.Logger, pubkeys []beacon.ValidatorPubkey) ([]DeleteKeystoreData, *beacon.SlashingProtectionData, error)
 
 	// Get the graffiti for a validator
 	GetGraffitiForValidator(ctx context.Context, logger *slog.Logger, pubkey beacon.ValidatorPubkey) (GetGraffitiData, error)

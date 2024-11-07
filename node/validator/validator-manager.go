@@ -168,7 +168,7 @@ func (m *ValidatorManager) LoadKey(pubkey beacon.ValidatorPubkey) (*types.BLSPri
 }
 
 // Deletes a validator key from the manager's client keystores, and optionally and the Validator Client's key manager
-func (m *ValidatorManager) DeleteKey(ctx context.Context, logger *slog.Logger, pubkey beacon.ValidatorPubkey, deleteFromVc bool) error {
+func (m *ValidatorManager) DeleteKey(ctx context.Context, logger *slog.Logger, pubkey beacon.ValidatorPubkey, deleteFromVc bool) (*beacon.SlashingProtectionData, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -182,25 +182,25 @@ func (m *ValidatorManager) DeleteKey(ctx context.Context, logger *slog.Logger, p
 	}
 	if len(errors) > 0 {
 		// If there were errors, return them
-		return fmt.Errorf("encountered the following errors while trying to delete the key for validator %s:\n%s", pubkey.Hex(), strings.Join(errors, "\n"))
+		return nil, fmt.Errorf("encountered the following errors while trying to delete the key for validator %s:\n%s", pubkey.Hex(), strings.Join(errors, "\n"))
 	}
 	if !deleteFromVc {
-		return nil
+		return nil, nil
 	}
 
 	// Delete the key from the key manager
-	data, err := m.keyMgr.DeleteKeys(ctx, logger, []beacon.ValidatorPubkey{pubkey})
+	data, slashingProtection, err := m.keyMgr.DeleteKeys(ctx, logger, []beacon.ValidatorPubkey{pubkey})
 	if err != nil {
-		return fmt.Errorf("error deleting validator key from key manager: %w", err)
+		return nil, fmt.Errorf("error deleting validator key from key manager: %w", err)
 	}
 	for _, d := range data {
 		switch d.Status {
 		case keymanager.DeleteKeystoreStatus_Error:
-			return fmt.Errorf("deleting validator key from key manager failed: %s", d.Message)
+			return nil, fmt.Errorf("deleting validator key from key manager failed: %s", d.Message)
 		default:
 			// Ignore everything else
 			continue
 		}
 	}
-	return nil
+	return slashingProtection, nil
 }

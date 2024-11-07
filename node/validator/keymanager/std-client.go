@@ -148,14 +148,14 @@ func (c *StandardKeyManagerClient) ImportKeys(ctx context.Context, logger *slog.
 }
 
 // Delete keys from the key manager
-func (c *StandardKeyManagerClient) DeleteKeys(ctx context.Context, logger *slog.Logger, pubkeys []beacon.ValidatorPubkey) ([]DeleteKeystoreData, error) {
+func (c *StandardKeyManagerClient) DeleteKeys(ctx context.Context, logger *slog.Logger, pubkeys []beacon.ValidatorPubkey) ([]DeleteKeystoreData, *beacon.SlashingProtectionData, error) {
 	var body DeleteKeysBody
 	body.Pubkeys = pubkeys
 
 	// Marshal the body
 	bodyData, err := json.Marshal(body)
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling exit data to JSON: %w", err)
+		return nil, nil, fmt.Errorf("error marshalling exit data to JSON: %w", err)
 	}
 	safeDebugLog(logger, "Prepared delete keys POST body",
 		"body", body,
@@ -164,17 +164,17 @@ func (c *StandardKeyManagerClient) DeleteKeys(ctx context.Context, logger *slog.
 	// Submit the request
 	code, response, err := submitRequest[[]DeleteKeystoreData](c, ctx, logger, http.MethodDelete, bytes.NewBuffer(bodyData), nil, KeystoresRoute)
 	if err != nil {
-		return nil, fmt.Errorf("error deleting keys: %w", err)
+		return nil, nil, fmt.Errorf("error deleting keys: %w", err)
 	}
 
 	// Handle response based on return code
 	switch code {
 	case http.StatusOK:
 		// Success
-		return response.Data, nil
+		return response.Data, &response.SlashingProtection, nil
 
 	default:
-		return nil, fmt.Errorf("VC responded to request with code %d and message: %s", code, response.Message)
+		return nil, nil, fmt.Errorf("VC responded to request with code %d and message: %s", code, response.Message)
 	}
 }
 
