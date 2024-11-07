@@ -53,8 +53,8 @@ func NewValidatorManager(validatorPath string, keyManager keymanager.IKeyManager
 	return mgr
 }
 
-// Gets all the validator pubkeys stored in all of the keystores on disk, and the keys stored on the Validator Client.
-func (m *ValidatorManager) GetAllKeys(ctx context.Context, logger *slog.Logger) (map[beacon.ValidatorPubkey]StoredValidatorKeyInfo, error) {
+// Gets all the validator pubkeys stored in all of the keystores on disk, and optionally the keys stored on the Validator Client.
+func (m *ValidatorManager) GetAllKeys(ctx context.Context, logger *slog.Logger, includeVc bool) (map[beacon.ValidatorPubkey]StoredValidatorKeyInfo, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	keys := map[beacon.ValidatorPubkey]StoredValidatorKeyInfo{}
@@ -74,6 +74,9 @@ func (m *ValidatorManager) GetAllKeys(ctx context.Context, logger *slog.Logger) 
 			keys[pubkey] = key
 		}
 	}
+	if !includeVc {
+		return keys, nil
+	}
 
 	// Get the keys stored in the Validator Client
 	data, err := m.keyMgr.GetLoadedKeys(ctx, logger)
@@ -89,26 +92,25 @@ func (m *ValidatorManager) GetAllKeys(ctx context.Context, logger *slog.Logger) 
 		key.IsLoadedInValidatorClient = true
 		keys[pubkey] = key
 	}
-
 	return keys, nil
 }
 
-// Stores a validator key into all of the manager's client keystores on disk, but does not upload to the Validator Client
-func (m *ValidatorManager) StoreKey(key *types.BLSPrivateKey, derivationPath string) error {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	return m.storeKeyImpl(key, derivationPath)
-}
-
-// Stores a validator key into all of the manager's client keystores and uploads it to the VC's key manager
-func (m *ValidatorManager) StoreAndUploadKey(ctx context.Context, logger *slog.Logger, key *types.BLSPrivateKey, derivationPath string, slashingProtection *beacon.SlashingProtectionData) error {
+// Stores a validator key into all of the manager's client keystores on disk, optionally uploading it to the VC's key manager.
+// The slashing protection is optional and only used if uploading the key to the key manager.
+func (m *ValidatorManager) StoreKey(ctx context.Context, logger *slog.Logger, key *types.BLSPrivateKey, derivationPath string, slashingProtection *beacon.SlashingProtectionData, uploadToVc bool) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	// Store the key in all of the keystores
-	err := m.storeKeyImpl(key, derivationPath)
-	if err != nil {
-		return fmt.Errorf("error storing validator key in keystores: %w", err)
+	for name, mgr := range m.keystoreManagers {
+		err := mgr.StoreValidatorKey(key, derivationPath)
+		if err != nil {
+			pubkey := beacon.ValidatorPubkey(key.PublicKey().Marshal())
+			return fmt.Errorf("error saving validator key %s (path %s) to the %s keystore: %w", pubkey.HexWithPrefix(), derivationPath, name, err)
+		}
+	}
+	if !uploadToVc {
+		return nil
 	}
 
 	// Generate a keystore and password
@@ -165,8 +167,8 @@ func (m *ValidatorManager) LoadKey(pubkey beacon.ValidatorPubkey) (*types.BLSPri
 	}
 }
 
-// Deletes a validator key from the manager's client keystores and the Validator Client's key manager
-func (m *ValidatorManager) DeleteKey(ctx context.Context, logger *slog.Logger, pubkey beacon.ValidatorPubkey) error {
+// Deletes a validator key from the manager's client keystores, and optionally and the Validator Client's key manager
+func (m *ValidatorManager) DeleteKey(ctx context.Context, logger *slog.Logger, pubkey beacon.ValidatorPubkey, deleteFromVc bool) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -182,6 +184,9 @@ func (m *ValidatorManager) DeleteKey(ctx context.Context, logger *slog.Logger, p
 		// If there were errors, return them
 		return fmt.Errorf("encountered the following errors while trying to delete the key for validator %s:\n%s", pubkey.Hex(), strings.Join(errors, "\n"))
 	}
+	if !deleteFromVc {
+		return nil
+	}
 
 	// Delete the key from the key manager
 	data, err := m.keyMgr.DeleteKeys(ctx, logger, []beacon.ValidatorPubkey{pubkey})
@@ -195,19 +200,6 @@ func (m *ValidatorManager) DeleteKey(ctx context.Context, logger *slog.Logger, p
 		default:
 			// Ignore everything else
 			continue
-		}
-	}
-	return nil
-}
-
-// Implementation for storing a key in the manager's client keystores on disk
-func (m *ValidatorManager) storeKeyImpl(key *types.BLSPrivateKey, derivationPath string) error {
-	// Store the key in all of the keystores
-	for name, mgr := range m.keystoreManagers {
-		err := mgr.StoreValidatorKey(key, derivationPath)
-		if err != nil {
-			pubkey := beacon.ValidatorPubkey(key.PublicKey().Marshal())
-			return fmt.Errorf("error saving validator key %s (path %s) to the %s keystore: %w", pubkey.HexWithPrefix(), derivationPath, name, err)
 		}
 	}
 	return nil
