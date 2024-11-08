@@ -324,13 +324,21 @@ func submitRequest[DataType any](c *StandardKeyManagerClient, ctx context.Contex
 		return 0, response, fmt.Errorf("VC responded to request with code %s but reading the response body failed: %w", resp.Status, err)
 	}
 
+	// Handle an empty response
+	if len(bytes) == 0 {
+		// Debug log
+		safeDebugLog(logger, "Received response from NodeSet server",
+			"status", resp.Status,
+			"response", "<empty>",
+		)
+		return resp.StatusCode, response, nil
+	}
+
 	// Unmarshal the response
 	err = json.Unmarshal(bytes, &response)
 	if err != nil {
 		return 0, response, fmt.Errorf("VC responded to request with code %s and unmarshalling the response failed: [%w]... original body: [%s]", resp.Status, err, string(bytes))
 	}
-
-	// Debug log
 	safeDebugLog(logger, "Received response from NodeSet server",
 		"status", resp.Status,
 		"response", response,
