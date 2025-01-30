@@ -8,7 +8,7 @@ require (
 	github.com/btcsuite/btcd v0.24.0
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/docker/docker v27.3.1+incompatible
-	github.com/ethereum/go-ethereum v1.14.11
+	github.com/ethereum/go-ethereum v1.14.13
 	github.com/fatih/color v1.16.0
 	github.com/ferranbt/fastssz v0.1.3
 	github.com/glendc/go-external-ip v0.1.0

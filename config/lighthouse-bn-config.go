@@ -6,7 +6,7 @@ import (
 
 const (
 	// Tags
-	lighthouseBnTag string = "sigp/lighthouse:v5.3.0"
+	lighthouseBnTag string = "sigp/lighthouse:v6.0.1"
 )
 
 // Configuration for the Lighthouse BN
@@ -29,7 +29,7 @@ func NewLighthouseBnConfig() *LighthouseBnConfig {
 	return &LighthouseBnConfig{
 		P2pQuicPort: Parameter[uint16]{
 			ParameterCommon: &ParameterCommon{
-				ID:                 ids.LighthouseQuicPortID,
+				ID:                 ids.BnQuicPortID,
 				Name:               "P2P QUIC Port",
 				Description:        "The port to use for P2P (blockchain) traffic using the QUIC protocol.",
 				AffectsContainers:  []ContainerID{ContainerID_BeaconNode},

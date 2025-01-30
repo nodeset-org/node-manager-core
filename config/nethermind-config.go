@@ -11,7 +11,7 @@ import (
 // Constants
 const (
 	// Tags
-	nethermindTag string = "nethermind/nethermind:1.29.1"
+	nethermindTag string = "nethermind/nethermind:1.30.3"
 )
 
 // Configuration for Nethermind
