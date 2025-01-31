@@ -128,6 +128,7 @@ func (cfg *PrysmBnConfig) GetTitle() string {
 // Get the parameters for this config
 func (cfg *PrysmBnConfig) GetParameters() []IParameter {
 	return []IParameter{
+		&cfg.P2pQuicPort,
 		&cfg.MaxPeers,
 		&cfg.RpcPort,
 		&cfg.OpenRpcPort,
