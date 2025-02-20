@@ -6,7 +6,7 @@ import (
 
 const (
 	// Tags
-	nimbusVcTag string = "statusim/nimbus-validator-client:multiarch-v25.1.0"
+	nimbusVcTag string = "statusim/nimbus-validator-client:multiarch-v25.2.0"
 )
 
 // Configuration for Nimbus

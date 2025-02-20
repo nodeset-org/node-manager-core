@@ -6,7 +6,8 @@ import (
 
 const (
 	// Tags
-	lighthouseBnTag string = "sigp/lighthouse:v6.0.1"
+	lighthouseProdBnTag string = "sigp/lighthouse:v6.0.1"
+	lighthouseTestBnTag string = "sigp/lighthouse:v7.0.0-beta.0"
 )
 
 // Configuration for the Lighthouse BN
@@ -65,7 +66,8 @@ func NewLighthouseBnConfig() *LighthouseBnConfig {
 				OverwriteOnUpgrade: true,
 			},
 			Default: map[Network]string{
-				Network_All: lighthouseBnTag,
+				Network_Holesky: lighthouseTestBnTag,
+				Network_All:     lighthouseProdBnTag,
 			},
 		},
 
