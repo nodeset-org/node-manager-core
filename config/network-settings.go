@@ -14,24 +14,26 @@ import (
 var (
 	// Reference for Mainnet network resources, not used directly but helpful for testing
 	MainnetResourcesReference *NetworkResources = &NetworkResources{
-		EthNetworkName:        "mainnet",
-		ChainID:               1,
-		GenesisForkVersion:    common.FromHex("0x00000000"), // https://github.com/eth-clients/eth2-networks/tree/master/shared/mainnet#genesis-information
-		MulticallAddress:      common.HexToAddress("0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696"),
-		BalanceBatcherAddress: common.HexToAddress("0xb1f8e55c7f64d203c1400b9d8555d050f94adf39"),
-		TxWatchUrl:            "https://etherscan.io/tx",
-		FlashbotsProtectUrl:   "https://rpc.flashbots.net/",
+		EthNetworkName:         "mainnet",
+		ChainID:                1,
+		GenesisForkVersion:     common.FromHex("0x00000000"), // https://github.com/eth-clients/eth2-networks/tree/master/shared/mainnet#genesis-information
+		MulticallAddress:       common.HexToAddress("0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696"),
+		BalanceBatcherAddress:  common.HexToAddress("0xb1f8e55c7f64d203c1400b9d8555d050f94adf39"),
+		TxWatchUrl:             "https://etherscan.io/tx",
+		FlashbotsProtectUrl:    "https://rpc.flashbots.net/",
+		DepositContractAddress: common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
 	}
 
 	// Reference for Holesky network resources, not used directly but helpful for testing
 	HoleskyResourcesReference *NetworkResources = &NetworkResources{
-		EthNetworkName:        "holesky",
-		ChainID:               17000,
-		GenesisForkVersion:    common.FromHex("0x01017000"), // https://github.com/eth-clients/holesky
-		MulticallAddress:      common.HexToAddress("0x0540b786f03c9491f3a2ab4b0e3ae4ecd4f63ce7"),
-		BalanceBatcherAddress: common.HexToAddress("0xfAa2e7C84eD801dd9D27Ac1ed957274530796140"),
-		TxWatchUrl:            "https://holesky.etherscan.io/tx",
-		FlashbotsProtectUrl:   "https://rpc-holesky.flashbots.net",
+		EthNetworkName:         "holesky",
+		ChainID:                17000,
+		GenesisForkVersion:     common.FromHex("0x01017000"), // https://github.com/eth-clients/holesky
+		MulticallAddress:       common.HexToAddress("0x0540b786f03c9491f3a2ab4b0e3ae4ecd4f63ce7"),
+		BalanceBatcherAddress:  common.HexToAddress("0xfAa2e7C84eD801dd9D27Ac1ed957274530796140"),
+		TxWatchUrl:             "https://holesky.etherscan.io/tx",
+		FlashbotsProtectUrl:    "https://rpc-holesky.flashbots.net",
+		DepositContractAddress: common.HexToAddress("0x4242424242424242424242424242424242424242"),
 	}
 )
 
@@ -60,6 +62,9 @@ type NetworkResources struct {
 
 	// The MEV Blocker RPC endpoint
 	MevBlockerUrl string `yaml:"mevBlockerUrl" json:"mevBlockerUrl"`
+
+	// The Beacon deposit contract address for the network
+	DepositContractAddress common.Address `yaml:"depositContractAddress" json:"depositContractAddress"`
 }
 
 // NetworkSettings contains all of the settings for a given Ethereum network
