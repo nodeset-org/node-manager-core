@@ -35,6 +35,18 @@ var (
 		FlashbotsProtectUrl:    "https://rpc-holesky.flashbots.net",
 		DepositContractAddress: common.HexToAddress("0x4242424242424242424242424242424242424242"),
 	}
+
+	// Reference for Hoodi network resources, not used directly but helpful for testing
+	HoodiResourcesReference *NetworkResources = &NetworkResources{
+		EthNetworkName:         "hoodi",
+		ChainID:                560048,
+		GenesisForkVersion:     common.FromHex("0x10000910"),                                      // https://github.com/eth-clients/hoodi
+		MulticallAddress:       common.HexToAddress("0x0540b786f03c9491f3a2ab4b0e3ae4ecd4f63ce7"), // PLACEHOLDER
+		BalanceBatcherAddress:  common.HexToAddress("0xfAa2e7C84eD801dd9D27Ac1ed957274530796140"), // PLACEHOLDER
+		TxWatchUrl:             "https://hoodi.etherscan.io/tx",
+		FlashbotsProtectUrl:    "",
+		DepositContractAddress: common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
+	}
 )
 
 // A collection of network-specific resources and getters for them

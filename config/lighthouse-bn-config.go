@@ -67,6 +67,7 @@ func NewLighthouseBnConfig() *LighthouseBnConfig {
 			},
 			Default: map[Network]string{
 				Network_Holesky: lighthouseTestBnTag,
+				Network_Hoodi:   lighthouseTestBnTag,
 				Network_All:     lighthouseProdBnTag,
 			},
 		},

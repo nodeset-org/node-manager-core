@@ -33,6 +33,7 @@ func NewLighthouseVcConfig() *LighthouseVcConfig {
 			},
 			Default: map[Network]string{
 				Network_Holesky: lighthouseTestVcTag,
+				Network_Hoodi:   lighthouseTestVcTag,
 				Network_All:     lighthouseProdVcTag,
 			},
 		},

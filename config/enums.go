@@ -8,6 +8,9 @@ const (
 
 	// The standard name of the Ethereum holesky network, used for EL / CL flags
 	EthNetwork_Holesky string = "holesky"
+
+	// The standard name of the Ethereum hoodi network, used for EL / CL flags
+	EthNetwork_Hoodi string = "hoodi"
 )
 
 // Type for network keys, used in NetworkSettings to uniquely define the network
@@ -26,6 +29,9 @@ const (
 
 	// The standard key for the Holesky test network
 	Network_Holesky Network = Network(EthNetwork_Holesky)
+
+	// The standard key for the Hoodi test network
+	Network_Hoodi Network = Network(EthNetwork_Hoodi)
 )
 
 // A Docker container name
