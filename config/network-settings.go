@@ -40,10 +40,10 @@ var (
 	HoodiResourcesReference *NetworkResources = &NetworkResources{
 		EthNetworkName:         "hoodi",
 		ChainID:                560048,
-		GenesisForkVersion:     common.FromHex("0x10000910"),                                      // https://github.com/eth-clients/hoodi
-		MulticallAddress:       common.HexToAddress("0x0540b786f03c9491f3a2ab4b0e3ae4ecd4f63ce7"), // PLACEHOLDER
-		BalanceBatcherAddress:  common.HexToAddress("0xfAa2e7C84eD801dd9D27Ac1ed957274530796140"), // PLACEHOLDER
-		TxWatchUrl:             "https://hoodi.etherscan.io/tx",
+		GenesisForkVersion:     common.FromHex("0x10000910"), // https://github.com/eth-clients/hoodi
+		MulticallAddress:       common.HexToAddress("0xc5fA61aA6Ec012d1A2Ea38f31ADAf4D06c8725E7"),
+		BalanceBatcherAddress:  common.HexToAddress("0xB80b500CF68a956b6f149F1C48E8F07EEF4486Ce"),
+		TxWatchUrl:             "https://hoodi.cloud.blockscout.com/tx",
 		FlashbotsProtectUrl:    "",
 		DepositContractAddress: common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
 	}
