@@ -10,8 +10,8 @@ import (
 // Constants
 const (
 	// Tags
-	gethProdTag string = "ethereum/client-go:v1.15.5"
-	gethTestTag string = "nodeset/geth:v1.15.6-hoodi"
+	gethProdTag string = "ethereum/client-go:v1.15.6"
+	gethTestTag string = "ethereum/client-go:v1.15.6"
 )
 
 // Configuration for Geth

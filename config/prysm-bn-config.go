@@ -6,8 +6,8 @@ import (
 
 const (
 	// Tags
-	prysmBnProdTag string = "rocketpool/prysm:v5.3.0"
-	prysmBnTestTag string = "nodeset/prysm:v5.3.1-hoodi"
+	prysmBnProdTag string = "nodeset/prysm:v5.3.2"
+	prysmBnTestTag string = "nodeset/prysm:v5.3.2"
 )
 
 // Configuration for the Prysm BN
