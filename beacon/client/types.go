@@ -37,7 +37,18 @@ type Eth2ConfigResponse struct {
 		SecondsPerSlot               utils.Uinteger  `json:"SECONDS_PER_SLOT"`
 		SlotsPerEpoch                utils.Uinteger  `json:"SLOTS_PER_EPOCH"`
 		EpochsPerSyncCommitteePeriod utils.Uinteger  `json:"EPOCHS_PER_SYNC_COMMITTEE_PERIOD"`
+		GenesisForkVersion           utils.ByteArray `json:"GENESIS_FORK_VERSION"`
+		AltairForkVersion            utils.ByteArray `json:"ALTAIR_FORK_VERSION"`
+		AltairForkEpoch              utils.Uinteger  `json:"ALTAIR_FORK_EPOCH"`
+		BellatrixForkVersion         utils.ByteArray `json:"BELLATRIX_FORK_VERSION"`
+		BellatrixForkEpoch           utils.Uinteger  `json:"BELLATRIX_FORK_EPOCH"`
 		CapellaForkVersion           utils.ByteArray `json:"CAPELLA_FORK_VERSION"`
+		CapellaForkEpoch             utils.Uinteger  `json:"CAPELLA_FORK_EPOCH"`
+		DenebForkVersion             utils.ByteArray `json:"DENEB_FORK_VERSION"`
+		DenebForkEpoch               utils.Uinteger  `json:"DENEB_FORK_EPOCH"`
+		DepositChainID               utils.Uinteger  `json:"DEPOSIT_CHAIN_ID"`
+		DepositNetworkID             utils.Uinteger  `json:"DEPOSIT_NETWORK_ID"`
+		DepositContractAddress       common.Address  `json:"DEPOSIT_CONTRACT_ADDRESS"`
 		ShardCommitteePeriod         utils.Uinteger  `json:"SHARD_COMMITTEE_PERIOD"`
 	} `json:"data"`
 }

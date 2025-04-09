@@ -22,6 +22,8 @@ var (
 		TxWatchUrl:             "https://etherscan.io/tx",
 		FlashbotsProtectUrl:    "https://rpc.flashbots.net/",
 		DepositContractAddress: common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
+		CapellaForkVersion:     common.FromHex("0x03000000"),
+		CapellaForkEpoch:       194048,
 	}
 
 	// Reference for Holesky network resources, not used directly but helpful for testing
@@ -34,6 +36,8 @@ var (
 		TxWatchUrl:             "https://holesky.etherscan.io/tx",
 		FlashbotsProtectUrl:    "https://rpc-holesky.flashbots.net",
 		DepositContractAddress: common.HexToAddress("0x4242424242424242424242424242424242424242"),
+		CapellaForkVersion:     common.FromHex("0x04017000"),
+		CapellaForkEpoch:       256,
 	}
 
 	// Reference for Hoodi network resources, not used directly but helpful for testing
@@ -43,9 +47,11 @@ var (
 		GenesisForkVersion:     common.FromHex("0x10000910"), // https://github.com/eth-clients/hoodi
 		MulticallAddress:       common.HexToAddress("0xc5fA61aA6Ec012d1A2Ea38f31ADAf4D06c8725E7"),
 		BalanceBatcherAddress:  common.HexToAddress("0xB80b500CF68a956b6f149F1C48E8F07EEF4486Ce"),
-		TxWatchUrl:             "https://hoodi.cloud.blockscout.com/tx",
+		TxWatchUrl:             "https://hoodi.etherscan.io/tx",
 		FlashbotsProtectUrl:    "",
 		DepositContractAddress: common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
+		CapellaForkVersion:     common.FromHex("0x40000910"),
+		CapellaForkEpoch:       0,
 	}
 )
 
@@ -77,6 +83,12 @@ type NetworkResources struct {
 
 	// The Beacon deposit contract address for the network
 	DepositContractAddress common.Address `yaml:"depositContractAddress" json:"depositContractAddress"`
+
+	// The Capella fork version of the Beacon chain for this network
+	CapellaForkVersion utils.ByteArray `yaml:"capellaForkVersion" json:"capellaForkVersion"`
+
+	// The epoch that the Capella fork occurred on this network
+	CapellaForkEpoch uint64 `yaml:"capellaForkEpoch" json:"capellaForkEpoch"`
 }
 
 // NetworkSettings contains all of the settings for a given Ethereum network
