@@ -67,6 +67,13 @@ type BeaconBlockHeader struct {
 	Slot          uint64
 	ProposerIndex string
 }
+type PendingDeposit struct {
+	Pubkey                ValidatorPubkey
+	WithdrawalCredentials common.Hash
+	Amount                uint64
+	Signature             ValidatorSignature
+	Slot                  uint64
+}
 
 // Committees is an interface as an optimization- since committees responses
 // are quite large, there's a decent cpu/memory improvement to removing the

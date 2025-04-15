@@ -165,3 +165,15 @@ type Attestation struct {
 		Index utils.Uinteger `json:"index"`
 	} `json:"data"`
 }
+
+type PendingDeposit struct {
+	Pubkey                utils.ByteArray `json:"pubkey"`
+	WithdrawalCredentials utils.ByteArray `json:"withdrawal_credentials"`
+	Amount                utils.Uinteger  `json:"amount"`
+	Signature             utils.ByteArray `json:"signature"`
+	Slot                  utils.Uinteger  `json:"slot"`
+}
+
+type PendingDepositsResponse struct {
+	Data []PendingDeposit `json:"data"`
+}

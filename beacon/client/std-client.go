@@ -268,6 +268,29 @@ func (c *StandardClient) GetValidatorStatuses(ctx context.Context, pubkeys []bea
 
 }
 
+func (c *StandardClient) GetPendingDeposits(ctx context.Context, stateID string) ([]beacon.PendingDeposit, error) {
+	// Get pending deposits
+	rawPendingDeposits, err := c.provider.Beacon_PendingDeposits(ctx, stateID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to native types
+	pendingDeposits := make([]beacon.PendingDeposit, len(rawPendingDeposits.Data))
+	for i, rawDeposit := range rawPendingDeposits.Data {
+		pendingDeposits[i] = beacon.PendingDeposit{
+			Pubkey:                beacon.ValidatorPubkey(rawDeposit.Pubkey),
+			WithdrawalCredentials: common.BytesToHash(rawDeposit.WithdrawalCredentials),
+			Amount:                uint64(rawDeposit.Amount),
+			Signature:             beacon.ValidatorSignature(rawDeposit.Signature),
+			Slot:                  uint64(rawDeposit.Slot),
+		}
+	}
+
+	// Return response
+	return pendingDeposits, nil
+}
+
 // Get whether validators have sync duties to perform at given epoch
 func (c *StandardClient) GetValidatorSyncDuties(ctx context.Context, indices []string, epoch uint64) (map[string]bool, error) {
 	// Perform the post request

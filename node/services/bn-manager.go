@@ -216,6 +216,13 @@ func (m *BeaconClientManager) ChangeWithdrawalCredentials(ctx context.Context, v
 	})
 }
 
+// Get the pending deposits for a state ID
+func (m *BeaconClientManager) GetPendingDeposits(ctx context.Context, stateID string) ([]beacon.PendingDeposit, error) {
+	return runFunction1(m, ctx, func(client beacon.IBeaconClient) ([]beacon.PendingDeposit, error) {
+		return client.GetPendingDeposits(ctx, stateID)
+	})
+}
+
 /// =================
 /// Manager Functions
 /// =================

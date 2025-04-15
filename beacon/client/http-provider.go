@@ -27,6 +27,7 @@ const (
 	RequestFinalityCheckpointsPath         = "/eth/v1/beacon/states/%s/finality_checkpoints"
 	RequestForkPath                        = "/eth/v1/beacon/states/%s/fork"
 	RequestValidatorsPath                  = "/eth/v1/beacon/states/%s/validators"
+	RequestPendingDepositsPath             = "/eth/v1/beacon/states/%s/pending_deposits"
 	RequestVoluntaryExitPath               = "/eth/v1/beacon/pool/voluntary_exits"
 	RequestAttestationsPath                = "/eth/v1/beacon/blocks/%s/attestations"
 	RequestBeaconBlockPath                 = "/eth/v2/beacon/blocks/%s"
@@ -36,6 +37,14 @@ const (
 	RequestWithdrawalCredentialsChangePath = "/eth/v1/beacon/pool/bls_to_execution_changes"
 
 	MaxRequestValidatorsCount = 600
+)
+
+var (
+	// Used for routes that only work after the Pectra upgrade
+	ErrorStateNotPectra error = fmt.Errorf("the provided state was before the Pectra upgrade, so this route is not available")
+
+	// Used for routes that exist in the Beacon spec but aren't provided by the client
+	ErrorNotSupportedYet error = fmt.Errorf("the provided client does not support this route yet")
 )
 
 type BeaconHttpProvider struct {
@@ -215,6 +224,33 @@ func (p *BeaconHttpProvider) Beacon_VoluntaryExits_Post(ctx context.Context, req
 		return fmt.Errorf("error broadcasting exit for validator at index %s: HTTP status %d; response body: '%s'", request.Message.ValidatorIndex, status, string(responseBody))
 	}
 	return nil
+}
+
+// Get the pending deposits for the given state.
+// If this is called on a pre-Pectra state, the returned error will be ErrorStateNotPectra.
+// If this is called on a client that doesn't have support for this route (and by extension, Pectra) yet, the returned error will be ErrorNotSupportedYet.
+func (p *BeaconHttpProvider) Beacon_PendingDeposits(ctx context.Context, stateID string) (PendingDepositsResponse, error) {
+	responseBody, status, err := p.getRequest(ctx, fmt.Sprintf(RequestPendingDepositsPath, stateID))
+	if err != nil {
+		return PendingDepositsResponse{}, fmt.Errorf("error getting pending deposits: %w", err)
+	}
+	if status != http.StatusOK {
+		if status == http.StatusBadRequest {
+			// If we get a 400 error, it means that the state is before Pectra
+			return PendingDepositsResponse{}, ErrorStateNotPectra
+		}
+		if status == http.StatusNotFound {
+			// If we get a 404 error, it means that the client doesn't support this route yet
+			return PendingDepositsResponse{}, ErrorNotSupportedYet
+		}
+		// Otherwise, it's a generic error
+		return PendingDepositsResponse{}, fmt.Errorf("error getting pending deposits: HTTP status %d; response body: '%s'", status, string(responseBody))
+	}
+	var pendingDeposits PendingDepositsResponse
+	if err := json.Unmarshal(responseBody, &pendingDeposits); err != nil {
+		return PendingDepositsResponse{}, fmt.Errorf("error decoding pending deposits: %w", err)
+	}
+	return pendingDeposits, nil
 }
 
 func (p *BeaconHttpProvider) Config_DepositContract(ctx context.Context) (Eth2DepositContractResponse, error) {
