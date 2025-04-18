@@ -48,7 +48,7 @@ func NewLocalExecutionConfig() *LocalExecutionConfig {
 			Options: []*ParameterOption[ExecutionClient]{
 				{
 					ParameterOptionCommon: &ParameterOptionCommon{
-						Name:        "*Geth",
+						Name:        "Geth",
 						Description: "Geth is one of the three original implementations of the Ethereum protocol. It is written in Go, fully open source and licensed under the GNU LGPL v3.\n\n[orange]NOTE: Geth is currently overrepresented on the Ethereum network (a \"supermajority\" clients). We recommend choosing a different client for the health of the network. Please see https://clientdiversity.org/ to learn more.",
 					},
 					Value: ExecutionClient_Geth,
