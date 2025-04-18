@@ -9,7 +9,7 @@ import (
 
 // Constants
 const (
-	rethTag string = "ghcr.io/paradigmxyz/reth:v1.3.11"
+	rethTag string = "ghcr.io/paradigmxyz/reth:v1.3.12"
 )
 
 // Configuration for Reth
