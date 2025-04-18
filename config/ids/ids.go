@@ -99,8 +99,9 @@ const (
 	PrysmRpcUrlID      string = "prysmRpcUrl"
 
 	// Reth
-	RethMaxInboundPeersID  string = "maxInboundPeers"
-	RethMaxOutboundPeersID string = "maxOutboundPeers"
+	RethMaxInboundPeersID    string = "maxInboundPeers"
+	RethMaxOutboundPeersID   string = "maxOutboundPeers"
+	RethStatePruneDistanceID string = "statePruneDistance"
 
 	// Teku
 	TekuJvmHeapSizeID           string = "jvmHeapSize"
