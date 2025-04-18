@@ -22,6 +22,7 @@ var (
 		TxWatchUrl:             "https://etherscan.io/tx",
 		FlashbotsProtectUrl:    "https://rpc.flashbots.net/",
 		DepositContractAddress: common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
+		DepositContractBlock:   11052984,
 		CapellaForkVersion:     common.FromHex("0x03000000"),
 		CapellaForkEpoch:       194048,
 	}
@@ -36,6 +37,7 @@ var (
 		TxWatchUrl:             "https://holesky.etherscan.io/tx",
 		FlashbotsProtectUrl:    "https://rpc-holesky.flashbots.net",
 		DepositContractAddress: common.HexToAddress("0x4242424242424242424242424242424242424242"),
+		DepositContractBlock:   0,
 		CapellaForkVersion:     common.FromHex("0x04017000"),
 		CapellaForkEpoch:       256,
 	}
@@ -50,6 +52,7 @@ var (
 		TxWatchUrl:             "https://hoodi.etherscan.io/tx",
 		FlashbotsProtectUrl:    "",
 		DepositContractAddress: common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
+		DepositContractBlock:   0,
 		CapellaForkVersion:     common.FromHex("0x40000910"),
 		CapellaForkEpoch:       0,
 	}
@@ -83,6 +86,9 @@ type NetworkResources struct {
 
 	// The Beacon deposit contract address for the network
 	DepositContractAddress common.Address `yaml:"depositContractAddress" json:"depositContractAddress"`
+
+	// The block number that the deposit contract was deployed on
+	DepositContractBlock uint64 `yaml:"depositContractBlock" json:"depositContractBlock"`
 
 	// The Capella fork version of the Beacon chain for this network
 	CapellaForkVersion utils.ByteArray `yaml:"capellaForkVersion" json:"capellaForkVersion"`
