@@ -41,7 +41,7 @@ func GetEthClientLatestBlockTimestamp(ec eth.IExecutionClient) (uint64, error) {
 	return header.Time, nil
 }
 
-// Returns true if the error was a connection failure and a backup client is available
+// Returns true if the error was a connection failure
 func isDisconnected(err error) bool {
 	var sysErr syscall.Errno
 	if errors.As(err, &sysErr) {

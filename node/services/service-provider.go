@@ -151,9 +151,9 @@ func NewServiceProvider(cfg config.IConfig, resources *config.NetworkResources, 
 		primaryBc := client.NewStandardHttpClient(primaryBnUrl, clientTimeout)
 		if fallbackBnUrl != "" {
 			fallbackBc := client.NewStandardHttpClient(fallbackBnUrl, clientTimeout)
-			opts.BeaconClientManager = NewBeaconClientManagerWithFallback(primaryBc, fallbackBc, resources.ChainID, clientTimeout)
+			opts.BeaconClientManager = NewBeaconClientManagerWithFallback(primaryBc, fallbackBc, resources.ChainID)
 		} else {
-			opts.BeaconClientManager = NewBeaconClientManager(primaryBc, resources.ChainID, clientTimeout)
+			opts.BeaconClientManager = NewBeaconClientManager(primaryBc, resources.ChainID)
 		}
 	}
 

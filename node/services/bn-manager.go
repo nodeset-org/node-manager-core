@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rocket-pool/node-manager-core/api/types"
@@ -21,7 +20,7 @@ type BeaconClientManager struct {
 }
 
 // Creates a new BeaconClientManager instance
-func NewBeaconClientManager(primaryBc beacon.IBeaconClient, chainID uint, clientTimeout time.Duration) *BeaconClientManager {
+func NewBeaconClientManager(primaryBc beacon.IBeaconClient, chainID uint) *BeaconClientManager {
 	return &BeaconClientManager{
 		primaryBc:       primaryBc,
 		primaryReady:    true,
@@ -32,7 +31,7 @@ func NewBeaconClientManager(primaryBc beacon.IBeaconClient, chainID uint, client
 }
 
 // Creates a new BeaconClientManager instance with a fallback client
-func NewBeaconClientManagerWithFallback(primaryBc beacon.IBeaconClient, fallbackBc beacon.IBeaconClient, chainID uint, clientTimeout time.Duration) *BeaconClientManager {
+func NewBeaconClientManagerWithFallback(primaryBc beacon.IBeaconClient, fallbackBc beacon.IBeaconClient, chainID uint) *BeaconClientManager {
 	return &BeaconClientManager{
 		primaryBc:       primaryBc,
 		fallbackBc:      fallbackBc,

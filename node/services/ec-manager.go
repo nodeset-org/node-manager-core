@@ -93,6 +93,8 @@ func (m *ExecutionClientManager) SetFallbackReady(ready bool) {
 // CodeAt returns the code of the given account. This is needed to differentiate
 // between contract internal errors and the local chain being out of sync.
 func (m *ExecutionClientManager) CodeAt(ctx context.Context, contract common.Address, blockNumber *big.Int) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) ([]byte, error) {
 		return client.CodeAt(ctx, contract, blockNumber)
 	})
@@ -101,6 +103,8 @@ func (m *ExecutionClientManager) CodeAt(ctx context.Context, contract common.Add
 // CallContract executes an Ethereum contract call with the specified data as the
 // input.
 func (m *ExecutionClientManager) CallContract(ctx context.Context, call ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) ([]byte, error) {
 		return client.CallContract(ctx, call, blockNumber)
 	})
@@ -112,6 +116,8 @@ func (m *ExecutionClientManager) CallContract(ctx context.Context, call ethereum
 
 // HeaderByHash returns the block header with the given hash.
 func (m *ExecutionClientManager) HeaderByHash(ctx context.Context, hash common.Hash) (*types.Header, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (*types.Header, error) {
 		return client.HeaderByHash(ctx, hash)
 	})
@@ -120,6 +126,8 @@ func (m *ExecutionClientManager) HeaderByHash(ctx context.Context, hash common.H
 // HeaderByNumber returns a block header from the current canonical chain. If number is
 // nil, the latest known header is returned.
 func (m *ExecutionClientManager) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (*types.Header, error) {
 		return client.HeaderByNumber(ctx, number)
 	})
@@ -127,6 +135,8 @@ func (m *ExecutionClientManager) HeaderByNumber(ctx context.Context, number *big
 
 // PendingCodeAt returns the code of the given account in the pending state.
 func (m *ExecutionClientManager) PendingCodeAt(ctx context.Context, account common.Address) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) ([]byte, error) {
 		return client.PendingCodeAt(ctx, account)
 	})
@@ -134,6 +144,8 @@ func (m *ExecutionClientManager) PendingCodeAt(ctx context.Context, account comm
 
 // PendingNonceAt retrieves the current pending nonce associated with an account.
 func (m *ExecutionClientManager) PendingNonceAt(ctx context.Context, account common.Address) (uint64, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (uint64, error) {
 		return client.PendingNonceAt(ctx, account)
 	})
@@ -142,6 +154,8 @@ func (m *ExecutionClientManager) PendingNonceAt(ctx context.Context, account com
 // SuggestGasPrice retrieves the currently suggested gas price to allow a timely
 // execution of a transaction.
 func (m *ExecutionClientManager) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (*big.Int, error) {
 		return client.SuggestGasPrice(ctx)
 	})
@@ -150,6 +164,8 @@ func (m *ExecutionClientManager) SuggestGasPrice(ctx context.Context) (*big.Int,
 // SuggestGasTipCap retrieves the currently suggested 1559 priority fee to allow
 // a timely execution of a transaction.
 func (m *ExecutionClientManager) SuggestGasTipCap(ctx context.Context) (*big.Int, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (*big.Int, error) {
 		return client.SuggestGasTipCap(ctx)
 	})
@@ -161,6 +177,8 @@ func (m *ExecutionClientManager) SuggestGasTipCap(ctx context.Context) (*big.Int
 // transactions may be added or removed by miners, but it should provide a basis
 // for setting a reasonable default.
 func (m *ExecutionClientManager) EstimateGas(ctx context.Context, call ethereum.CallMsg) (uint64, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (uint64, error) {
 		return client.EstimateGas(ctx, call)
 	})
@@ -168,6 +186,8 @@ func (m *ExecutionClientManager) EstimateGas(ctx context.Context, call ethereum.
 
 // SendTransaction injects the transaction into the pending pool for execution.
 func (m *ExecutionClientManager) SendTransaction(ctx context.Context, tx *types.Transaction) error {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction0(m, ctx, func(client eth.IExecutionClient) error {
 		return client.SendTransaction(ctx, tx)
 	})
@@ -182,6 +202,8 @@ func (m *ExecutionClientManager) SendTransaction(ctx context.Context, tx *types.
 //
 // TODO(karalabe): Deprecate when the subscription one can return past data too.
 func (m *ExecutionClientManager) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) ([]types.Log, error) {
 		return client.FilterLogs(ctx, query)
 	})
@@ -190,6 +212,8 @@ func (m *ExecutionClientManager) FilterLogs(ctx context.Context, query ethereum.
 // SubscribeFilterLogs creates a background log filtering operation, returning
 // a subscription immediately, which can be used to stream the found events.
 func (m *ExecutionClientManager) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (ethereum.Subscription, error) {
 		return client.SubscribeFilterLogs(ctx, query, ch)
 	})
@@ -202,6 +226,8 @@ func (m *ExecutionClientManager) SubscribeFilterLogs(ctx context.Context, query 
 // TransactionReceipt returns the receipt of a transaction by transaction hash.
 // Note that the receipt is not available for pending transactions.
 func (m *ExecutionClientManager) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (*types.Receipt, error) {
 		return client.TransactionReceipt(ctx, txHash)
 	})
@@ -213,6 +239,8 @@ func (m *ExecutionClientManager) TransactionReceipt(ctx context.Context, txHash 
 
 // BlockNumber returns the most recent block number
 func (m *ExecutionClientManager) BlockNumber(ctx context.Context) (uint64, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (uint64, error) {
 		return client.BlockNumber(ctx)
 	})
@@ -221,6 +249,8 @@ func (m *ExecutionClientManager) BlockNumber(ctx context.Context) (uint64, error
 // BalanceAt returns the wei balance of the given account.
 // The block number can be nil, in which case the balance is taken from the latest known block.
 func (m *ExecutionClientManager) BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (*big.Int, error) {
 		return client.BalanceAt(ctx, account, blockNumber)
 	})
@@ -228,6 +258,8 @@ func (m *ExecutionClientManager) BalanceAt(ctx context.Context, account common.A
 
 // TransactionByHash returns the transaction with the given hash.
 func (m *ExecutionClientManager) TransactionByHash(ctx context.Context, hash common.Hash) (*types.Transaction, bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction2(m, ctx, func(client eth.IExecutionClient) (*types.Transaction, bool, error) {
 		return client.TransactionByHash(ctx, hash)
 	})
@@ -236,6 +268,8 @@ func (m *ExecutionClientManager) TransactionByHash(ctx context.Context, hash com
 // NonceAt returns the account nonce of the given account.
 // The block number can be nil, in which case the nonce is taken from the latest known block.
 func (m *ExecutionClientManager) NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (uint64, error) {
 		return client.NonceAt(ctx, account, blockNumber)
 	})
@@ -244,6 +278,8 @@ func (m *ExecutionClientManager) NonceAt(ctx context.Context, account common.Add
 // SyncProgress retrieves the current progress of the sync algorithm. If there's
 // no sync currently running, it returns nil.
 func (m *ExecutionClientManager) SyncProgress(ctx context.Context) (*ethereum.SyncProgress, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (*ethereum.SyncProgress, error) {
 		return client.SyncProgress(ctx)
 	})
@@ -254,6 +290,8 @@ func (m *ExecutionClientManager) SyncProgress(ctx context.Context) (*ethereum.Sy
 /// =======================
 
 func (m *ExecutionClientManager) ChainID(ctx context.Context) (*big.Int, error) {
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
 	return runFunction1(m, ctx, func(client eth.IExecutionClient) (*big.Int, error) {
 		return client.ChainID(ctx)
 	})
