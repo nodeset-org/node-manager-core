@@ -412,7 +412,7 @@ func (c *StandardClient) ExitValidator(ctx context.Context, validatorIndex strin
 // Get the ETH1 data for the target beacon block
 func (c *StandardClient) GetEth1DataForEth2Block(ctx context.Context, blockId string) (beacon.Eth1Data, bool, error) {
 	// Get the Beacon block
-	block, exists, err := c.provider.Beacon_Block(ctx, blockId)
+	block, exists, err := c.provider.Beacon_Blinded_Block(ctx, blockId)
 	if err != nil {
 		return beacon.Eth1Data{}, false, err
 	}
@@ -453,7 +453,7 @@ func (c *StandardClient) GetAttestations(ctx context.Context, blockId string) ([
 }
 
 func (c *StandardClient) GetBeaconBlock(ctx context.Context, blockId string) (beacon.BeaconBlock, bool, error) {
-	block, exists, err := c.provider.Beacon_Block(ctx, blockId)
+	block, exists, err := c.provider.Beacon_Blinded_Block(ctx, blockId)
 	if err != nil {
 		return beacon.BeaconBlock{}, false, err
 	}
@@ -469,12 +469,12 @@ func (c *StandardClient) GetBeaconBlock(ctx context.Context, blockId string) (be
 	}
 
 	// Execution payload only exists after the merge, so check for its existence
-	if block.Data.Message.Body.ExecutionPayload == nil {
+	if block.Data.Message.Body.ExecutionPayloadHeader == nil {
 		beaconBlock.HasExecutionPayload = false
 	} else {
 		beaconBlock.HasExecutionPayload = true
-		beaconBlock.FeeRecipient = common.BytesToAddress(block.Data.Message.Body.ExecutionPayload.FeeRecipient)
-		beaconBlock.ExecutionBlockNumber = uint64(block.Data.Message.Body.ExecutionPayload.BlockNumber)
+		beaconBlock.FeeRecipient = common.BytesToAddress(block.Data.Message.Body.ExecutionPayloadHeader.FeeRecipient)
+		beaconBlock.ExecutionBlockNumber = uint64(block.Data.Message.Body.ExecutionPayloadHeader.BlockNumber)
 	}
 
 	// Add attestation info

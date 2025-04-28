@@ -88,6 +88,26 @@ type ForkResponse struct {
 type AttestationsResponse struct {
 	Data []Attestation `json:"data"`
 }
+type BeaconBlindedBlockResponse struct {
+	Data struct {
+		Message struct {
+			Slot          utils.Uinteger `json:"slot"`
+			ProposerIndex string         `json:"proposer_index"`
+			Body          struct {
+				Eth1Data struct {
+					DepositRoot  utils.ByteArray `json:"deposit_root"`
+					DepositCount utils.Uinteger  `json:"deposit_count"`
+					BlockHash    utils.ByteArray `json:"block_hash"`
+				} `json:"eth1_data"`
+				Attestations           []Attestation `json:"attestations"`
+				ExecutionPayloadHeader *struct {
+					FeeRecipient utils.ByteArray `json:"fee_recipient"`
+					BlockNumber  utils.Uinteger  `json:"block_number"`
+				} `json:"execution_payload_header"`
+			} `json:"body"`
+		} `json:"message"`
+	} `json:"data"`
+}
 type BeaconBlockResponse struct {
 	Data struct {
 		Message struct {

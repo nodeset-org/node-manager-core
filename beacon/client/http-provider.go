@@ -31,6 +31,7 @@ const (
 	RequestVoluntaryExitPath               = "/eth/v1/beacon/pool/voluntary_exits"
 	RequestAttestationsPath                = "/eth/v1/beacon/blocks/%s/attestations"
 	RequestBeaconBlockPath                 = "/eth/v2/beacon/blocks/%s"
+	RequestBeaconBlindedBlockPath          = "/eth/v1/beacon/blinded_blocks/%s"
 	RequestBeaconBlockHeaderPath           = "/eth/v1/beacon/headers/%s"
 	RequestValidatorSyncDuties             = "/eth/v1/validator/duties/sync/%s"
 	RequestValidatorProposerDuties         = "/eth/v1/validator/duties/proposer/%s"
@@ -77,6 +78,24 @@ func (p *BeaconHttpProvider) Beacon_Attestations(ctx context.Context, blockId st
 		return AttestationsResponse{}, false, fmt.Errorf("error decoding attestations data for slot %s: %w", blockId, err)
 	}
 	return attestations, true, nil
+}
+
+func (p *BeaconHttpProvider) Beacon_Blinded_Block(ctx context.Context, blockId string) (BeaconBlindedBlockResponse, bool, error) {
+	responseBody, status, err := p.getRequest(ctx, fmt.Sprintf(RequestBeaconBlindedBlockPath, blockId))
+	if err != nil {
+		return BeaconBlindedBlockResponse{}, false, fmt.Errorf("error getting beacon blinded block data: %w", err)
+	}
+	if status == http.StatusNotFound {
+		return BeaconBlindedBlockResponse{}, false, nil
+	}
+	if status != http.StatusOK {
+		return BeaconBlindedBlockResponse{}, false, fmt.Errorf("error getting beacon blinded block data: HTTP status %d; response body: '%s'", status, string(responseBody))
+	}
+	var beaconBlock BeaconBlindedBlockResponse
+	if err := json.Unmarshal(responseBody, &beaconBlock); err != nil {
+		return BeaconBlindedBlockResponse{}, false, fmt.Errorf("error decoding beacon blinded block data: %w", err)
+	}
+	return beaconBlock, true, nil
 }
 
 func (p *BeaconHttpProvider) Beacon_Block(ctx context.Context, blockId string) (BeaconBlockResponse, bool, error) {

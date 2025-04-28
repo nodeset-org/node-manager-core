@@ -4,6 +4,7 @@ import "context"
 
 type IBeaconApiProvider interface {
 	Beacon_Attestations(ctx context.Context, blockId string) (AttestationsResponse, bool, error)
+	Beacon_Blinded_Block(ctx context.Context, blockId string) (BeaconBlindedBlockResponse, bool, error)
 	Beacon_Block(ctx context.Context, blockId string) (BeaconBlockResponse, bool, error)
 	Beacon_BlsToExecutionChanges_Post(ctx context.Context, request BLSToExecutionChangeRequest) error
 	Beacon_Committees(ctx context.Context, stateId string, epoch *uint64) (CommitteesResponse, error)
