@@ -25,6 +25,7 @@ type Eth2Config struct {
 	SlotsPerEpoch                uint64
 	SecondsPerEpoch              uint64
 	EpochsPerSyncCommitteePeriod uint64
+	ShardCommitteePeriod         uint64
 }
 type Eth2DepositContract struct {
 	ChainID uint64
@@ -65,6 +66,13 @@ type BeaconBlock struct {
 type BeaconBlockHeader struct {
 	Slot          uint64
 	ProposerIndex string
+}
+type PendingDeposit struct {
+	Pubkey                ValidatorPubkey
+	WithdrawalCredentials common.Hash
+	Amount                uint64
+	Signature             ValidatorSignature
+	Slot                  uint64
 }
 
 // Committees is an interface as an optimization- since committees responses

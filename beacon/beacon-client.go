@@ -21,6 +21,7 @@ type IBeaconClient interface {
 	GetValidatorIndex(ctx context.Context, pubkey ValidatorPubkey) (string, error)
 	GetValidatorSyncDuties(ctx context.Context, indices []string, epoch uint64) (map[string]bool, error)
 	GetValidatorProposerDuties(ctx context.Context, indices []string, epoch uint64) (map[string]uint64, error)
+	GetPendingDeposits(ctx context.Context, stateID string) ([]PendingDeposit, error)
 	GetDomainData(ctx context.Context, domainType []byte, epoch uint64, useGenesisFork bool) ([]byte, error)
 	ExitValidator(ctx context.Context, validatorIndex string, epoch uint64, signature ValidatorSignature) error
 	Close(ctx context.Context) error

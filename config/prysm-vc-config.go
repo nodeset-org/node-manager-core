@@ -6,7 +6,8 @@ import (
 
 const (
 	// Tags
-	prysmVcTag string = prysmBnTag
+	prysmVcProdTag string = prysmBnProdTag
+	prysmVcTestTag string = prysmBnTestTag
 )
 
 // Configuration for the Prysm VC
@@ -31,7 +32,9 @@ func NewPrysmVcConfig() *PrysmVcConfig {
 				OverwriteOnUpgrade: true,
 			},
 			Default: map[Network]string{
-				Network_All: prysmVcTag,
+				Network_Holesky: prysmVcTestTag,
+				Network_Hoodi:   prysmVcTestTag,
+				Network_All:     prysmVcProdTag,
 			},
 		},
 

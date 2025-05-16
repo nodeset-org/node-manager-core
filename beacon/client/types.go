@@ -37,7 +37,19 @@ type Eth2ConfigResponse struct {
 		SecondsPerSlot               utils.Uinteger  `json:"SECONDS_PER_SLOT"`
 		SlotsPerEpoch                utils.Uinteger  `json:"SLOTS_PER_EPOCH"`
 		EpochsPerSyncCommitteePeriod utils.Uinteger  `json:"EPOCHS_PER_SYNC_COMMITTEE_PERIOD"`
+		GenesisForkVersion           utils.ByteArray `json:"GENESIS_FORK_VERSION"`
+		AltairForkVersion            utils.ByteArray `json:"ALTAIR_FORK_VERSION"`
+		AltairForkEpoch              utils.Uinteger  `json:"ALTAIR_FORK_EPOCH"`
+		BellatrixForkVersion         utils.ByteArray `json:"BELLATRIX_FORK_VERSION"`
+		BellatrixForkEpoch           utils.Uinteger  `json:"BELLATRIX_FORK_EPOCH"`
 		CapellaForkVersion           utils.ByteArray `json:"CAPELLA_FORK_VERSION"`
+		CapellaForkEpoch             utils.Uinteger  `json:"CAPELLA_FORK_EPOCH"`
+		DenebForkVersion             utils.ByteArray `json:"DENEB_FORK_VERSION"`
+		DenebForkEpoch               utils.Uinteger  `json:"DENEB_FORK_EPOCH"`
+		DepositChainID               utils.Uinteger  `json:"DEPOSIT_CHAIN_ID"`
+		DepositNetworkID             utils.Uinteger  `json:"DEPOSIT_NETWORK_ID"`
+		DepositContractAddress       common.Address  `json:"DEPOSIT_CONTRACT_ADDRESS"`
+		ShardCommitteePeriod         utils.Uinteger  `json:"SHARD_COMMITTEE_PERIOD"`
 	} `json:"data"`
 }
 type Eth2DepositContractResponse struct {
@@ -75,6 +87,26 @@ type ForkResponse struct {
 }
 type AttestationsResponse struct {
 	Data []Attestation `json:"data"`
+}
+type BeaconBlindedBlockResponse struct {
+	Data struct {
+		Message struct {
+			Slot          utils.Uinteger `json:"slot"`
+			ProposerIndex string         `json:"proposer_index"`
+			Body          struct {
+				Eth1Data struct {
+					DepositRoot  utils.ByteArray `json:"deposit_root"`
+					DepositCount utils.Uinteger  `json:"deposit_count"`
+					BlockHash    utils.ByteArray `json:"block_hash"`
+				} `json:"eth1_data"`
+				Attestations           []Attestation `json:"attestations"`
+				ExecutionPayloadHeader *struct {
+					FeeRecipient utils.ByteArray `json:"fee_recipient"`
+					BlockNumber  utils.Uinteger  `json:"block_number"`
+				} `json:"execution_payload_header"`
+			} `json:"body"`
+		} `json:"message"`
+	} `json:"data"`
 }
 type BeaconBlockResponse struct {
 	Data struct {
@@ -152,4 +184,16 @@ type Attestation struct {
 		Slot  utils.Uinteger `json:"slot"`
 		Index utils.Uinteger `json:"index"`
 	} `json:"data"`
+}
+
+type PendingDeposit struct {
+	Pubkey                utils.ByteArray `json:"pubkey"`
+	WithdrawalCredentials utils.ByteArray `json:"withdrawal_credentials"`
+	Amount                utils.Uinteger  `json:"amount"`
+	Signature             utils.ByteArray `json:"signature"`
+	Slot                  utils.Uinteger  `json:"slot"`
+}
+
+type PendingDepositsResponse struct {
+	Data []PendingDeposit `json:"data"`
 }

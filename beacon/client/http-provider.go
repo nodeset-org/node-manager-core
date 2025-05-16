@@ -27,15 +27,25 @@ const (
 	RequestFinalityCheckpointsPath         = "/eth/v1/beacon/states/%s/finality_checkpoints"
 	RequestForkPath                        = "/eth/v1/beacon/states/%s/fork"
 	RequestValidatorsPath                  = "/eth/v1/beacon/states/%s/validators"
+	RequestPendingDepositsPath             = "/eth/v1/beacon/states/%s/pending_deposits"
 	RequestVoluntaryExitPath               = "/eth/v1/beacon/pool/voluntary_exits"
 	RequestAttestationsPath                = "/eth/v1/beacon/blocks/%s/attestations"
 	RequestBeaconBlockPath                 = "/eth/v2/beacon/blocks/%s"
+	RequestBeaconBlindedBlockPath          = "/eth/v1/beacon/blinded_blocks/%s"
 	RequestBeaconBlockHeaderPath           = "/eth/v1/beacon/headers/%s"
 	RequestValidatorSyncDuties             = "/eth/v1/validator/duties/sync/%s"
 	RequestValidatorProposerDuties         = "/eth/v1/validator/duties/proposer/%s"
 	RequestWithdrawalCredentialsChangePath = "/eth/v1/beacon/pool/bls_to_execution_changes"
 
 	MaxRequestValidatorsCount = 600
+)
+
+var (
+	// Used for routes that only work after the Pectra upgrade
+	ErrorStateNotPectra error = fmt.Errorf("the provided state was before the Pectra upgrade, so this route is not available")
+
+	// Used for routes that exist in the Beacon spec but aren't provided by the client
+	ErrorNotSupportedYet error = fmt.Errorf("the provided client does not support this route yet")
 )
 
 type BeaconHttpProvider struct {
@@ -68,6 +78,24 @@ func (p *BeaconHttpProvider) Beacon_Attestations(ctx context.Context, blockId st
 		return AttestationsResponse{}, false, fmt.Errorf("error decoding attestations data for slot %s: %w", blockId, err)
 	}
 	return attestations, true, nil
+}
+
+func (p *BeaconHttpProvider) Beacon_Blinded_Block(ctx context.Context, blockId string) (BeaconBlindedBlockResponse, bool, error) {
+	responseBody, status, err := p.getRequest(ctx, fmt.Sprintf(RequestBeaconBlindedBlockPath, blockId))
+	if err != nil {
+		return BeaconBlindedBlockResponse{}, false, fmt.Errorf("error getting beacon blinded block data: %w", err)
+	}
+	if status == http.StatusNotFound {
+		return BeaconBlindedBlockResponse{}, false, nil
+	}
+	if status != http.StatusOK {
+		return BeaconBlindedBlockResponse{}, false, fmt.Errorf("error getting beacon blinded block data: HTTP status %d; response body: '%s'", status, string(responseBody))
+	}
+	var beaconBlock BeaconBlindedBlockResponse
+	if err := json.Unmarshal(responseBody, &beaconBlock); err != nil {
+		return BeaconBlindedBlockResponse{}, false, fmt.Errorf("error decoding beacon blinded block data: %w", err)
+	}
+	return beaconBlock, true, nil
 }
 
 func (p *BeaconHttpProvider) Beacon_Block(ctx context.Context, blockId string) (BeaconBlockResponse, bool, error) {
@@ -192,7 +220,7 @@ func (p *BeaconHttpProvider) Beacon_Validators(ctx context.Context, stateId stri
 	if len(ids) > 0 {
 		query = fmt.Sprintf("?id=%s", strings.Join(ids, ","))
 	}
-	responseBody, status, err := p.getRequestWithoutTimeout(ctx, fmt.Sprintf(RequestValidatorsPath, stateId)+query)
+	responseBody, status, err := p.getRequest(ctx, fmt.Sprintf(RequestValidatorsPath, stateId)+query)
 	if err != nil {
 		return ValidatorsResponse{}, fmt.Errorf("error getting validators: %w", err)
 	}
@@ -217,13 +245,40 @@ func (p *BeaconHttpProvider) Beacon_VoluntaryExits_Post(ctx context.Context, req
 	return nil
 }
 
+// Get the pending deposits for the given state.
+// If this is called on a pre-Pectra state, the returned error will be ErrorStateNotPectra.
+// If this is called on a client that doesn't have support for this route (and by extension, Pectra) yet, the returned error will be ErrorNotSupportedYet.
+func (p *BeaconHttpProvider) Beacon_PendingDeposits(ctx context.Context, stateID string) (PendingDepositsResponse, error) {
+	responseBody, status, err := p.getRequest(ctx, fmt.Sprintf(RequestPendingDepositsPath, stateID))
+	if err != nil {
+		return PendingDepositsResponse{}, fmt.Errorf("error getting pending deposits: %w", err)
+	}
+	if status != http.StatusOK {
+		if status == http.StatusBadRequest {
+			// If we get a 400 error, it means that the state is before Pectra
+			return PendingDepositsResponse{}, ErrorStateNotPectra
+		}
+		if status == http.StatusNotFound {
+			// If we get a 404 error, it means that the client doesn't support this route yet
+			return PendingDepositsResponse{}, ErrorNotSupportedYet
+		}
+		// Otherwise, it's a generic error
+		return PendingDepositsResponse{}, fmt.Errorf("error getting pending deposits: HTTP status %d; response body: '%s'", status, string(responseBody))
+	}
+	var pendingDeposits PendingDepositsResponse
+	if err := json.Unmarshal(responseBody, &pendingDeposits); err != nil {
+		return PendingDepositsResponse{}, fmt.Errorf("error decoding pending deposits: %w", err)
+	}
+	return pendingDeposits, nil
+}
+
 func (p *BeaconHttpProvider) Config_DepositContract(ctx context.Context) (Eth2DepositContractResponse, error) {
 	responseBody, status, err := p.getRequest(ctx, RequestEth2DepositContractMethod)
 	if err != nil {
 		return Eth2DepositContractResponse{}, fmt.Errorf("error getting eth2 deposit contract: %w", err)
 	}
 	if status != http.StatusOK {
-		return Eth2DepositContractResponse{}, fmt.Errorf("error gettingeth2 deposit contract: HTTP status %d; response body: '%s'", status, string(responseBody))
+		return Eth2DepositContractResponse{}, fmt.Errorf("error getting eth2 deposit contract: HTTP status %d; response body: '%s'", status, string(responseBody))
 	}
 	var eth2DepositContract Eth2DepositContractResponse
 	if err := json.Unmarshal(responseBody, &eth2DepositContract); err != nil {
@@ -305,11 +360,13 @@ func (p *BeaconHttpProvider) getRequest(ctx context.Context, requestPath string)
 	return getRequestImpl(ctx, requestPath, p.providerAddress, p.client)
 }
 
+/*
 // Make a GET request to the beacon node and read the body of the response
 func (p *BeaconHttpProvider) getRequestWithoutTimeout(ctx context.Context, requestPath string) ([]byte, int, error) {
 	clientWithoutTimeout := http.Client{}
 	return getRequestImpl(ctx, requestPath, p.providerAddress, clientWithoutTimeout)
 }
+*/
 
 // Make a GET request to the beacon node and read the body of the response
 func getRequestImpl(ctx context.Context, requestPath string, providerAddress string, client http.Client) ([]byte, int, error) {

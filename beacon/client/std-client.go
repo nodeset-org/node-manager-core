@@ -34,6 +34,11 @@ func (c *StandardClient) Close(ctx context.Context) error {
 	return nil
 }
 
+// Get the client's underlying Beacon HTTP API provider
+func (c *StandardClient) GetProvider() IBeaconApiProvider {
+	return c.provider
+}
+
 // Get the node's sync status
 func (c *StandardClient) GetSyncStatus(ctx context.Context) (beacon.SyncStatus, error) {
 	// Get sync status
@@ -88,6 +93,7 @@ func (c *StandardClient) GetEth2Config(ctx context.Context) (beacon.Eth2Config, 
 		SlotsPerEpoch:                uint64(eth2Config.Data.SlotsPerEpoch),
 		SecondsPerEpoch:              uint64(eth2Config.Data.SecondsPerSlot * eth2Config.Data.SlotsPerEpoch),
 		EpochsPerSyncCommitteePeriod: uint64(eth2Config.Data.EpochsPerSyncCommitteePeriod),
+		ShardCommitteePeriod:         uint64(eth2Config.Data.ShardCommitteePeriod),
 	}, nil
 }
 
@@ -262,6 +268,29 @@ func (c *StandardClient) GetValidatorStatuses(ctx context.Context, pubkeys []bea
 
 }
 
+func (c *StandardClient) GetPendingDeposits(ctx context.Context, stateID string) ([]beacon.PendingDeposit, error) {
+	// Get pending deposits
+	rawPendingDeposits, err := c.provider.Beacon_PendingDeposits(ctx, stateID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to native types
+	pendingDeposits := make([]beacon.PendingDeposit, len(rawPendingDeposits.Data))
+	for i, rawDeposit := range rawPendingDeposits.Data {
+		pendingDeposits[i] = beacon.PendingDeposit{
+			Pubkey:                beacon.ValidatorPubkey(rawDeposit.Pubkey),
+			WithdrawalCredentials: common.BytesToHash(rawDeposit.WithdrawalCredentials),
+			Amount:                uint64(rawDeposit.Amount),
+			Signature:             beacon.ValidatorSignature(rawDeposit.Signature),
+			Slot:                  uint64(rawDeposit.Slot),
+		}
+	}
+
+	// Return response
+	return pendingDeposits, nil
+}
+
 // Get whether validators have sync duties to perform at given epoch
 func (c *StandardClient) GetValidatorSyncDuties(ctx context.Context, indices []string, epoch uint64) (map[string]bool, error) {
 	// Perform the post request
@@ -383,7 +412,7 @@ func (c *StandardClient) ExitValidator(ctx context.Context, validatorIndex strin
 // Get the ETH1 data for the target beacon block
 func (c *StandardClient) GetEth1DataForEth2Block(ctx context.Context, blockId string) (beacon.Eth1Data, bool, error) {
 	// Get the Beacon block
-	block, exists, err := c.provider.Beacon_Block(ctx, blockId)
+	block, exists, err := c.provider.Beacon_Blinded_Block(ctx, blockId)
 	if err != nil {
 		return beacon.Eth1Data{}, false, err
 	}
@@ -424,7 +453,7 @@ func (c *StandardClient) GetAttestations(ctx context.Context, blockId string) ([
 }
 
 func (c *StandardClient) GetBeaconBlock(ctx context.Context, blockId string) (beacon.BeaconBlock, bool, error) {
-	block, exists, err := c.provider.Beacon_Block(ctx, blockId)
+	block, exists, err := c.provider.Beacon_Blinded_Block(ctx, blockId)
 	if err != nil {
 		return beacon.BeaconBlock{}, false, err
 	}
@@ -440,12 +469,12 @@ func (c *StandardClient) GetBeaconBlock(ctx context.Context, blockId string) (be
 	}
 
 	// Execution payload only exists after the merge, so check for its existence
-	if block.Data.Message.Body.ExecutionPayload == nil {
+	if block.Data.Message.Body.ExecutionPayloadHeader == nil {
 		beaconBlock.HasExecutionPayload = false
 	} else {
 		beaconBlock.HasExecutionPayload = true
-		beaconBlock.FeeRecipient = common.BytesToAddress(block.Data.Message.Body.ExecutionPayload.FeeRecipient)
-		beaconBlock.ExecutionBlockNumber = uint64(block.Data.Message.Body.ExecutionPayload.BlockNumber)
+		beaconBlock.FeeRecipient = common.BytesToAddress(block.Data.Message.Body.ExecutionPayloadHeader.FeeRecipient)
+		beaconBlock.ExecutionBlockNumber = uint64(block.Data.Message.Body.ExecutionPayloadHeader.BlockNumber)
 	}
 
 	// Add attestation info
@@ -549,7 +578,11 @@ func (c *StandardClient) getValidatorsByOpts(ctx context.Context, pubkeysOrIndic
 	data := make([]Validator, count)
 	validFlags := make([]bool, count)
 	var wg errgroup.Group
-	wg.SetLimit(runtime.NumCPU() / 2)
+	limit := runtime.NumCPU() / 2
+	if limit < 1 {
+		limit = 1 // Handle single core machines
+	}
+	wg.SetLimit(limit)
 	for i := 0; i < count; i += MaxRequestValidatorsCount {
 		i := i
 		max := i + MaxRequestValidatorsCount

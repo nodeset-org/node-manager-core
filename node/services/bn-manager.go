@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rocket-pool/node-manager-core/api/types"
@@ -21,7 +20,7 @@ type BeaconClientManager struct {
 }
 
 // Creates a new BeaconClientManager instance
-func NewBeaconClientManager(primaryBc beacon.IBeaconClient, chainID uint, clientTimeout time.Duration) *BeaconClientManager {
+func NewBeaconClientManager(primaryBc beacon.IBeaconClient, chainID uint) *BeaconClientManager {
 	return &BeaconClientManager{
 		primaryBc:       primaryBc,
 		primaryReady:    true,
@@ -32,7 +31,7 @@ func NewBeaconClientManager(primaryBc beacon.IBeaconClient, chainID uint, client
 }
 
 // Creates a new BeaconClientManager instance with a fallback client
-func NewBeaconClientManagerWithFallback(primaryBc beacon.IBeaconClient, fallbackBc beacon.IBeaconClient, chainID uint, clientTimeout time.Duration) *BeaconClientManager {
+func NewBeaconClientManagerWithFallback(primaryBc beacon.IBeaconClient, fallbackBc beacon.IBeaconClient, chainID uint) *BeaconClientManager {
 	return &BeaconClientManager{
 		primaryBc:       primaryBc,
 		fallbackBc:      fallbackBc,
@@ -213,6 +212,13 @@ func (m *BeaconClientManager) GetCommitteesForEpoch(ctx context.Context, epoch *
 func (m *BeaconClientManager) ChangeWithdrawalCredentials(ctx context.Context, validatorIndex string, fromBlsPubkey beacon.ValidatorPubkey, toExecutionAddress common.Address, signature beacon.ValidatorSignature) error {
 	return runFunction0(m, ctx, func(client beacon.IBeaconClient) error {
 		return client.ChangeWithdrawalCredentials(ctx, validatorIndex, fromBlsPubkey, toExecutionAddress, signature)
+	})
+}
+
+// Get the pending deposits for a state ID
+func (m *BeaconClientManager) GetPendingDeposits(ctx context.Context, stateID string) ([]beacon.PendingDeposit, error) {
+	return runFunction1(m, ctx, func(client beacon.IBeaconClient) ([]beacon.PendingDeposit, error) {
+		return client.GetPendingDeposits(ctx, stateID)
 	})
 }
 

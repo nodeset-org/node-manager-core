@@ -4,12 +4,14 @@ import "context"
 
 type IBeaconApiProvider interface {
 	Beacon_Attestations(ctx context.Context, blockId string) (AttestationsResponse, bool, error)
+	Beacon_Blinded_Block(ctx context.Context, blockId string) (BeaconBlindedBlockResponse, bool, error)
 	Beacon_Block(ctx context.Context, blockId string) (BeaconBlockResponse, bool, error)
 	Beacon_BlsToExecutionChanges_Post(ctx context.Context, request BLSToExecutionChangeRequest) error
 	Beacon_Committees(ctx context.Context, stateId string, epoch *uint64) (CommitteesResponse, error)
 	Beacon_FinalityCheckpoints(ctx context.Context, stateId string) (FinalityCheckpointsResponse, error)
 	Beacon_Genesis(ctx context.Context) (GenesisResponse, error)
 	Beacon_Header(ctx context.Context, blockId string) (BeaconBlockHeaderResponse, bool, error)
+	Beacon_PendingDeposits(ctx context.Context, stateId string) (PendingDepositsResponse, error)
 	Beacon_Validators(ctx context.Context, stateId string, ids []string) (ValidatorsResponse, error)
 	Beacon_VoluntaryExits_Post(ctx context.Context, request VoluntaryExitRequest) error
 	Config_DepositContract(ctx context.Context) (Eth2DepositContractResponse, error)

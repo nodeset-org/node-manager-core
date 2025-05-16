@@ -6,7 +6,8 @@ import (
 
 const (
 	// Tags
-	lighthouseBnTag string = "sigp/lighthouse:v5.2.1"
+	lighthouseProdBnTag string = "sigp/lighthouse:v7.0.1"
+	lighthouseTestBnTag string = "sigp/lighthouse:v7.0.1"
 )
 
 // Configuration for the Lighthouse BN
@@ -29,7 +30,7 @@ func NewLighthouseBnConfig() *LighthouseBnConfig {
 	return &LighthouseBnConfig{
 		P2pQuicPort: Parameter[uint16]{
 			ParameterCommon: &ParameterCommon{
-				ID:                 ids.LighthouseQuicPortID,
+				ID:                 ids.BnQuicPortID,
 				Name:               "P2P QUIC Port",
 				Description:        "The port to use for P2P (blockchain) traffic using the QUIC protocol.",
 				AffectsContainers:  []ContainerID{ContainerID_BeaconNode},
@@ -65,7 +66,9 @@ func NewLighthouseBnConfig() *LighthouseBnConfig {
 				OverwriteOnUpgrade: true,
 			},
 			Default: map[Network]string{
-				Network_All: lighthouseBnTag,
+				Network_Holesky: lighthouseTestBnTag,
+				Network_Hoodi:   lighthouseTestBnTag,
+				Network_All:     lighthouseProdBnTag,
 			},
 		},
 

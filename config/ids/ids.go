@@ -17,6 +17,7 @@ const (
 	DoppelgangerDetectionID string = "doppelgangerDetection"
 	MetricsPortID           string = "metricsPort"
 	CacheSizeID             string = "cacheSize"
+	BnQuicPortID            string = "p2pQuicPort"
 
 	// Logger
 	LoggerLevelID      string = "level"
@@ -52,9 +53,6 @@ const (
 	// Geth
 	GethEvmTimeoutID  string = "evmTimeout"
 	GethArchiveModeID string = "archiveMode"
-
-	// Lighthouse
-	LighthouseQuicPortID string = "p2pQuicPort"
 
 	// Local Beacon Node
 	LocalBnCheckpointSyncUrlID string = "checkpointSyncUrl"
@@ -101,8 +99,9 @@ const (
 	PrysmRpcUrlID      string = "prysmRpcUrl"
 
 	// Reth
-	RethMaxInboundPeersID  string = "maxInboundPeers"
-	RethMaxOutboundPeersID string = "maxOutboundPeers"
+	RethMaxInboundPeersID    string = "maxInboundPeers"
+	RethMaxOutboundPeersID   string = "maxOutboundPeers"
+	RethStatePruneDistanceID string = "statePruneDistance"
 
 	// Teku
 	TekuJvmHeapSizeID           string = "jvmHeapSize"

@@ -6,11 +6,15 @@ import (
 
 const (
 	// Tags
-	prysmBnTag string = "rocketpool/prysm:v5.0.4"
+	prysmBnProdTag string = "nodeset/prysm:v6.0.0"
+	prysmBnTestTag string = "nodeset/prysm:v6.0.0"
 )
 
 // Configuration for the Prysm BN
 type PrysmBnConfig struct {
+	// The port to use for gossip traffic using the QUIC protocol
+	P2pQuicPort Parameter[uint16]
+
 	// The max number of P2P peers to connect to
 	MaxPeers Parameter[uint16]
 
@@ -30,6 +34,20 @@ type PrysmBnConfig struct {
 // Generates a new Prysm BN configuration
 func NewPrysmBnConfig() *PrysmBnConfig {
 	return &PrysmBnConfig{
+		P2pQuicPort: Parameter[uint16]{
+			ParameterCommon: &ParameterCommon{
+				ID:                 ids.BnQuicPortID,
+				Name:               "P2P QUIC Port",
+				Description:        "The port to use for P2P (blockchain) traffic using the QUIC protocol.",
+				AffectsContainers:  []ContainerID{ContainerID_BeaconNode},
+				CanBeBlank:         false,
+				OverwriteOnUpgrade: false,
+			},
+			Default: map[Network]uint16{
+				Network_All: 8001,
+			},
+		},
+
 		MaxPeers: Parameter[uint16]{
 			ParameterCommon: &ParameterCommon{
 				ID:                 ids.MaxPeersID,
@@ -83,7 +101,9 @@ func NewPrysmBnConfig() *PrysmBnConfig {
 				OverwriteOnUpgrade: true,
 			},
 			Default: map[Network]string{
-				Network_All: prysmBnTag,
+				Network_Holesky: prysmBnTestTag,
+				Network_Hoodi:   prysmBnTestTag,
+				Network_All:     prysmBnProdTag,
 			},
 		},
 
@@ -111,6 +131,7 @@ func (cfg *PrysmBnConfig) GetTitle() string {
 // Get the parameters for this config
 func (cfg *PrysmBnConfig) GetParameters() []IParameter {
 	return []IParameter{
+		&cfg.P2pQuicPort,
 		&cfg.MaxPeers,
 		&cfg.RpcPort,
 		&cfg.OpenRpcPort,

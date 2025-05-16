@@ -9,7 +9,7 @@ import (
 
 // Constants
 const (
-	rethTag string = "ghcr.io/paradigmxyz/reth:v1.0.1"
+	rethTag string = "ghcr.io/paradigmxyz/reth:v1.3.12"
 )
 
 // Configuration for Reth
@@ -22,6 +22,9 @@ type RethConfig struct {
 
 	// Max number of P2P peers to this node can connect to
 	MaxOutboundPeers Parameter[uint16]
+
+	// The number of blocks to keep the chain state for before pruning it
+	StatePruneDistance Parameter[uint64]
 
 	// The Docker Hub tag for Reth
 	ContainerTag Parameter[string]
@@ -71,6 +74,20 @@ func NewRethConfig() *RethConfig {
 			Default: map[Network]uint16{Network_All: calculateRethPeers()},
 		},
 
+		StatePruneDistance: Parameter[uint64]{
+			ParameterCommon: &ParameterCommon{
+				ID:                 ids.RethStatePruneDistanceID,
+				Name:               "State Prune Distance",
+				Description:        "The number of blocks to keep the chain state (account and storage history) for before pruning it. For example, if set to 10064, Reth will preserve the state of the last 10,064 blocks from the current chain head (about 1.4 days). This is useful for query / replaying state from historical blocks.\n\nNOTE: If you increase this value, it will not regenerate state that has already been pruned. Replaying pruned state will require a client resync to regenerate the state.",
+				AffectsContainers:  []ContainerID{ContainerID_ExecutionClient},
+				CanBeBlank:         false,
+				OverwriteOnUpgrade: false,
+			},
+			Default: map[Network]uint64{
+				Network_All: 10064,
+			},
+		},
+
 		ContainerTag: Parameter[string]{
 			ParameterCommon: &ParameterCommon{
 				ID:                 ids.ContainerTagID,
@@ -112,6 +129,7 @@ func (cfg *RethConfig) GetParameters() []IParameter {
 		&cfg.CacheSize,
 		&cfg.MaxInboundPeers,
 		&cfg.MaxOutboundPeers,
+		&cfg.StatePruneDistance,
 		&cfg.ContainerTag,
 		&cfg.AdditionalFlags,
 	}

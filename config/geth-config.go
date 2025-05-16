@@ -10,7 +10,8 @@ import (
 // Constants
 const (
 	// Tags
-	gethTag string = "ethereum/client-go:v1.14.7"
+	gethProdTag string = "ethereum/client-go:v1.15.10"
+	gethTestTag string = "ethereum/client-go:v1.15.10"
 )
 
 // Configuration for Geth
@@ -86,7 +87,9 @@ func NewGethConfig() *GethConfig {
 				OverwriteOnUpgrade: true,
 			},
 			Default: map[Network]string{
-				Network_All: gethTag,
+				Network_Holesky: gethTestTag,
+				Network_Hoodi:   gethTestTag,
+				Network_All:     gethProdTag,
 			},
 		},
 

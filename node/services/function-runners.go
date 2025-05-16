@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/rocket-pool/node-manager-core/log"
@@ -27,44 +28,48 @@ func runFunction1[ClientType any, ReturnType any](m iClientManagerImpl[ClientTyp
 	if m.IsPrimaryReady() {
 		// Try to run the function on the primary
 		result, err := function(m.GetPrimaryClient())
-		if err != nil {
-			if isDisconnected(err) {
-				// If it's disconnected, log it and try the fallback
-				m.SetPrimaryReady(false)
-				if m.IsFallbackEnabled() {
-					logger.Warn("Primary "+typeName+" client disconnected, using fallback...", log.Err(err))
-					return runFunction1[ClientType, ReturnType](m, ctx, function)
-				} else {
-					logger.Warn("Primary "+typeName+" disconnected and no fallback is configured.", log.Err(err))
-					return blank, fmt.Errorf("all " + typeName + "s failed")
-				}
-			}
-			// If it's a different error, just return it
-			return blank, err
+		if err == nil {
+			return result, nil
 		}
-		// If there's no error, return the result
-		return result, nil
+		if isDisconnected(err) {
+			// If it's disconnected, log it and try the fallback
+			m.SetPrimaryReady(false)
+			if m.IsFallbackEnabled() {
+				if logger != nil {
+					logger.Warn("Primary "+typeName+" client disconnected, using fallback...", log.Err(err))
+				}
+				return runFunction1[ClientType, ReturnType](m, ctx, function)
+			} else {
+				if logger != nil {
+					logger.Warn("Primary "+typeName+" disconnected and no fallback is configured.", log.Err(err))
+				}
+				return blank, fmt.Errorf("primary "+typeName+" disconnected and no fallback is configured: %w", err)
+			}
+		}
+		// If it's a different error, just return it
+		return blank, err
 	}
 
 	if m.IsFallbackReady() {
 		// Try to run the function on the fallback
 		result, err := function(m.GetFallbackClient())
-		if err != nil {
-			if isDisconnected(err) {
-				// If it's disconnected, log it and try the fallback
-				logger.Warn("Fallback "+typeName+" disconnected", log.Err(err))
-				m.SetFallbackReady(false)
-				return blank, fmt.Errorf("all " + typeName + "s failed")
-			}
-
-			// If it's a different error, just return it
-			return blank, err
+		if err == nil {
+			return result, nil
 		}
-		// If there's no error, return the result
-		return result, nil
+		if isDisconnected(err) {
+			// If it's disconnected, log it
+			m.SetFallbackReady(false)
+			if logger != nil {
+				logger.Warn("Fallback "+typeName+" disconnected", log.Err(err))
+			}
+			return blank, fmt.Errorf("fallback "+typeName+" disconnected: %w", err)
+		}
+
+		// If it's a different error, just return it
+		return blank, err
 	}
 
-	return blank, fmt.Errorf("no " + typeName + "s were ready")
+	return blank, errors.New("no " + typeName + "s were ready")
 }
 
 // Run a function with 0 outputs and an error
