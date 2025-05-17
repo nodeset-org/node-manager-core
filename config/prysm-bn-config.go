@@ -6,8 +6,8 @@ import (
 
 const (
 	// Tags
-	prysmBnProdTag string = "nodeset/prysm:v6.0.0"
-	prysmBnTestTag string = "nodeset/prysm:v6.0.0"
+	prysmBnProdTag string = "nodeset/prysm:v6.0.2"
+	prysmBnTestTag string = "nodeset/prysm:v6.0.2"
 )
 
 // Configuration for the Prysm BN
