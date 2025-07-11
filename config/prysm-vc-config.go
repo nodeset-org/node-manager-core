@@ -6,8 +6,8 @@ import (
 
 const (
 	// Tags
-	prysmVcProdTag string = prysmBnProdTag
-	prysmVcTestTag string = prysmBnTestTag
+	prysmVcProdTag string = "gcr.io/offchainlabs/prysm/validator:v6.0.4" //prysmBnProdTag
+	prysmVcTestTag string = "gcr.io/offchainlabs/prysm/validator:v6.0.4" //prysmBnTestTag
 )
 
 // Configuration for the Prysm VC

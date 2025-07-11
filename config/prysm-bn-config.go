@@ -6,8 +6,8 @@ import (
 
 const (
 	// Tags
-	prysmBnProdTag string = "nodeset/prysm:v6.0.3"
-	prysmBnTestTag string = "nodeset/prysm:v6.0.3"
+	prysmBnProdTag string = "gcr.io/offchainlabs/prysm/beacon-chain:v6.0.4" // "nodeset/prysm:v6.0.3"
+	prysmBnTestTag string = "gcr.io/offchainlabs/prysm/beacon-chain:v6.0.4"
 )
 
 // Configuration for the Prysm BN
