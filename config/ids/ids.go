@@ -71,6 +71,9 @@ const (
 	LocalEcNethermindID    string = "nethermind"
 	LocalEcRethID          string = "reth"
 
+	// Lodestar
+	LodestarEnablePruningID string = "enablePruning"
+
 	// Metrics
 	MetricsEnableID       string = "enableMetrics"
 	MetricsEnableBitflyID string = "enableBitflyNodeMetrics"
@@ -94,9 +97,10 @@ const (
 	NimbusPruningModeID string = "pruningMode"
 
 	// Prysm
-	PrysmRpcPortID     string = "rpcPort"
-	PrysmOpenRpcPortID string = "openRpcPort"
-	PrysmRpcUrlID      string = "prysmRpcUrl"
+	PrysmRpcPortID       string = "rpcPort"
+	PrysmOpenRpcPortID   string = "openRpcPort"
+	PrysmRpcUrlID        string = "prysmRpcUrl"
+	PrysmEnablePruningID string = "enablePruning"
 
 	// Reth
 	RethMaxInboundPeersID    string = "maxInboundPeers"

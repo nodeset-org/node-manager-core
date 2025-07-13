@@ -27,6 +27,9 @@ type PrysmBnConfig struct {
 	// The Docker Hub tag for the Prysm BN
 	ContainerTag Parameter[string]
 
+	// Whether or not pruning is enabled
+	EnablePruning Parameter[bool]
+
 	// Custom command line flags for the BN
 	AdditionalFlags Parameter[string]
 }
@@ -91,6 +94,20 @@ func NewPrysmBnConfig() *PrysmBnConfig {
 			},
 		},
 
+		EnablePruning: Parameter[bool]{
+			ParameterCommon: &ParameterCommon{
+				ID:                 ids.PrysmEnablePruningID,
+				Name:               "Enable Pruning",
+				Description:        "If enabled, Prysm will delete all Beacon Chain data older than 5 months. This will reduce disk space usage, but you won't be able to access historical data beyond that point.",
+				AffectsContainers:  []ContainerID{ContainerID_BeaconNode},
+				CanBeBlank:         false,
+				OverwriteOnUpgrade: false,
+			},
+			Default: map[Network]bool{
+				Network_All: false,
+			},
+		},
+
 		ContainerTag: Parameter[string]{
 			ParameterCommon: &ParameterCommon{
 				ID:                 ids.ContainerTagID,
@@ -135,6 +152,7 @@ func (cfg *PrysmBnConfig) GetParameters() []IParameter {
 		&cfg.MaxPeers,
 		&cfg.RpcPort,
 		&cfg.OpenRpcPort,
+		&cfg.EnablePruning,
 		&cfg.ContainerTag,
 		&cfg.AdditionalFlags,
 	}

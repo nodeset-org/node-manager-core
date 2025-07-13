@@ -16,6 +16,9 @@ type LodestarBnConfig struct {
 	// The Docker Hub tag for Lodestar BN
 	ContainerTag Parameter[string]
 
+	// Whether or not pruning is enabled
+	EnablePruning Parameter[bool]
+
 	// Custom command line flags for the BN
 	AdditionalFlags Parameter[string]
 }
@@ -34,6 +37,20 @@ func NewLodestarBnConfig() *LodestarBnConfig {
 			},
 			Default: map[Network]uint16{
 				Network_All: 100,
+			},
+		},
+
+		EnablePruning: Parameter[bool]{
+			ParameterCommon: &ParameterCommon{
+				ID:                 ids.LodestarEnablePruningID,
+				Name:               "Enable Pruning",
+				Description:        "If enabled, Lodestar will delete all Beacon Chain data older than 5 months. This will reduce disk space usage, but you won't be able to access historical data beyond that point.",
+				AffectsContainers:  []ContainerID{ContainerID_BeaconNode},
+				CanBeBlank:         false,
+				OverwriteOnUpgrade: false,
+			},
+			Default: map[Network]bool{
+				Network_All: false,
 			},
 		},
 
@@ -76,6 +93,7 @@ func (cfg *LodestarBnConfig) GetTitle() string {
 func (cfg *LodestarBnConfig) GetParameters() []IParameter {
 	return []IParameter{
 		&cfg.MaxPeers,
+		&cfg.EnablePruning,
 		&cfg.ContainerTag,
 		&cfg.AdditionalFlags,
 	}
