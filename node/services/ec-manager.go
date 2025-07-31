@@ -17,9 +17,9 @@ import (
 // This is a proxy for multiple ETH clients, providing natural fallback support if one of them fails.
 type ExecutionClientManager struct {
 	primaryEc       eth.IExecutionClient
-	fallbackEc      eth.IExecutionClient
+	fallbackEcs     []eth.IExecutionClient
 	primaryReady    bool
-	fallbackReady   bool
+	fallbacksReady  []bool
 	expectedChainID uint
 	timeout         time.Duration
 	fallbackEnabled bool
@@ -30,20 +30,24 @@ func NewExecutionClientManager(primaryEc eth.IExecutionClient, chainID uint, cli
 	return &ExecutionClientManager{
 		primaryEc:       primaryEc,
 		primaryReady:    true,
-		fallbackReady:   false,
+		fallbacksReady:  []bool{false},
 		expectedChainID: chainID,
 		timeout:         clientTimeout,
 		fallbackEnabled: false,
 	}
 }
 
-// Creates a new ExecutionClientManager instance that includes a fallback client
-func NewExecutionClientManagerWithFallback(primaryEc eth.IExecutionClient, fallbackEc eth.IExecutionClient, chainID uint, clientTimeout time.Duration) *ExecutionClientManager {
+// Creates a new ExecutionClientManager instance that includes fallback clients
+func NewExecutionClientManagerWithFallbacks(primaryEc eth.IExecutionClient, fallbackEcs []eth.IExecutionClient, chainID uint, clientTimeout time.Duration) *ExecutionClientManager {
+	fallbacksReady := make([]bool, len(fallbackEcs))
+	for i := range fallbacksReady {
+		fallbacksReady[i] = true
+	}
 	return &ExecutionClientManager{
 		primaryEc:       primaryEc,
-		fallbackEc:      fallbackEc,
+		fallbackEcs:     fallbackEcs,
 		primaryReady:    true,
-		fallbackReady:   true,
+		fallbacksReady:  fallbacksReady,
 		expectedChainID: chainID,
 		timeout:         clientTimeout,
 		fallbackEnabled: true,
@@ -58,8 +62,8 @@ func (m *ExecutionClientManager) GetPrimaryClient() eth.IExecutionClient {
 	return m.primaryEc
 }
 
-func (m *ExecutionClientManager) GetFallbackClient() eth.IExecutionClient {
-	return m.fallbackEc
+func (m *ExecutionClientManager) GetFallbackClients() []eth.IExecutionClient {
+	return m.fallbackEcs
 }
 
 func (m *ExecutionClientManager) IsPrimaryReady() bool {
@@ -71,7 +75,7 @@ func (m *ExecutionClientManager) IsFallbackReady() bool {
 }
 
 func (m *ExecutionClientManager) IsFallbackEnabled() bool {
-	return m.fallbackEc != nil
+	return m.fallbackEcs != nil
 }
 
 func (m *ExecutionClientManager) GetClientTypeName() string {
@@ -321,7 +325,7 @@ func (m *ExecutionClientManager) CheckStatus(ctx context.Context, checkChainIDs 
 
 	// Get the fallback EC status if applicable
 	if status.FallbackEnabled {
-		status.FallbackClientStatus = checkEcStatus(ctx, m.fallbackEc, checkChainIDs)
+		status.FallbackClientStatus = checkEcStatus(ctx, m.fallbackEcs, checkChainIDs)
 		// Check if fallback is using the expected network
 		if checkChainIDs && status.FallbackClientStatus.Error == "" && status.FallbackClientStatus.ChainId != m.expectedChainID {
 			m.fallbackReady = false
