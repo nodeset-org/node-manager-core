@@ -7,14 +7,14 @@ type FallbackConfig struct {
 	// Flag for enabling fallback clients
 	UseFallbackClients Parameter[bool]
 
-	// The URL of the Execution Client HTTP endpoint
-	EcHttpUrl Parameter[string]
+	// The URLs of the Execution Client HTTP endpoint
+	EcHttpUrls Parameter[string]
 
-	// The URL of the Beacon Node HTTP endpoint
-	BnHttpUrl Parameter[string]
+	// The URLs of the Beacon Node HTTP endpoint
+	BnHttpUrls Parameter[string]
 
-	// The URL of the Prysm gRPC endpoint (only needed if using Prysm VCs)
-	PrysmRpcUrl Parameter[string]
+	// The URLs of the Prysm gRPC endpoint (only needed if using Prysm VCs)
+	PrysmRpcUrls Parameter[string]
 }
 
 // Generates a new FallbackConfig configuration
@@ -24,7 +24,7 @@ func NewFallbackConfig() *FallbackConfig {
 			ParameterCommon: &ParameterCommon{
 				ID:                 ids.FallbackUseFallbackClientsID,
 				Name:               "Use Fallback Clients",
-				Description:        "Enable this if you would like to specify a fallback Execution and Beacon Node, which will temporarily be used by your node and Validator Client(s) if your primary Execution / Beacon Node pair ever go offline (e.g. if you switch, prune, or resync your clients).",
+				Description:        "Enable this if you would like to specify one or more fallback Execution and Beacon Node pairs, which will temporarily be used by your node and Validator Client(s) if your primary Execution / Beacon Node pair ever go offline (e.g. if you switch, prune, or resync your clients).",
 				AffectsContainers:  []ContainerID{ContainerID_Daemon, ContainerID_ValidatorClient},
 				CanBeBlank:         false,
 				OverwriteOnUpgrade: false,
@@ -34,11 +34,11 @@ func NewFallbackConfig() *FallbackConfig {
 			},
 		},
 
-		EcHttpUrl: Parameter[string]{
+		EcHttpUrls: Parameter[string]{
 			ParameterCommon: &ParameterCommon{
 				ID:                 ids.FallbackEcHttpUrlID,
-				Name:               "Execution Client URL",
-				Description:        "The URL of the HTTP API endpoint for your fallback Execution client.\n\nNOTE: If you are running it on the same machine as your node, addresses like `localhost` and `127.0.0.1` will not work due to Docker limitations. Enter your machine's LAN IP address instead.",
+				Name:               "Execution Client URLs",
+				Description:        "A comma-separated list of URLs for the HTTP API endpoints for each fallback Execution client.\n\nNOTE: If you are running any on the same machine as your node, addresses like `localhost` and `127.0.0.1` will not work due to Docker limitations. Enter your machine's LAN IP address instead.",
 				AffectsContainers:  []ContainerID{ContainerID_Daemon},
 				CanBeBlank:         false,
 				OverwriteOnUpgrade: false,
@@ -48,11 +48,11 @@ func NewFallbackConfig() *FallbackConfig {
 			},
 		},
 
-		BnHttpUrl: Parameter[string]{
+		BnHttpUrls: Parameter[string]{
 			ParameterCommon: &ParameterCommon{
 				ID:                 ids.FallbackBnHttpUrlID,
-				Name:               "Beacon Node URL",
-				Description:        "The URL of the HTTP Beacon API endpoint for your fallback Beacon Node.\n\nNOTE: If you are running it on the same machine as your node, addresses like `localhost` and `127.0.0.1` will not work due to Docker limitations. Enter your machine's LAN IP address instead.",
+				Name:               "Beacon Node URLs",
+				Description:        "A comma-separated list of URLs for the HTTP Beacon API endpoints for each fallback Beacon Node.\n\nNOTE: If you are running any on the same machine as your node, addresses like `localhost` and `127.0.0.1` will not work due to Docker limitations. Enter your machine's LAN IP address instead.",
 				AffectsContainers:  []ContainerID{ContainerID_Daemon, ContainerID_ValidatorClient},
 				CanBeBlank:         false,
 				OverwriteOnUpgrade: false,
@@ -62,11 +62,11 @@ func NewFallbackConfig() *FallbackConfig {
 			},
 		},
 
-		PrysmRpcUrl: Parameter[string]{
+		PrysmRpcUrls: Parameter[string]{
 			ParameterCommon: &ParameterCommon{
 				ID:                 ids.PrysmRpcUrlID,
 				Name:               "RPC URL (Prysm Only)",
-				Description:        "**Only used if you have a Prysm Validator Client.**\n\nThe URL of Prysm's gRPC API endpoint for your fallback Beacon Node. Prysm's Validator Client will need this in order to connect to it.\nNOTE: If you are running it on the same machine as your node, addresses like `localhost` and `127.0.0.1` will not work due to Docker limitations. Enter your machine's LAN IP address instead.",
+				Description:        "**Only used if you have a Prysm Validator Client.**\n\nA comma-separated list of URLs for the Prysm gRPC API endpoints for each fallback Beacon Node. Prysm's Validator Client will need this in order to connect to them.\nNOTE: If you are running any on the same machine as your node, addresses like `localhost` and `127.0.0.1` will not work due to Docker limitations. Enter your machine's LAN IP address instead.",
 				AffectsContainers:  []ContainerID{ContainerID_ValidatorClient},
 				CanBeBlank:         false,
 				OverwriteOnUpgrade: false,
@@ -87,9 +87,9 @@ func (cfg *FallbackConfig) GetTitle() string {
 func (cfg *FallbackConfig) GetParameters() []IParameter {
 	return []IParameter{
 		&cfg.UseFallbackClients,
-		&cfg.EcHttpUrl,
-		&cfg.BnHttpUrl,
-		&cfg.PrysmRpcUrl,
+		&cfg.EcHttpUrls,
+		&cfg.BnHttpUrls,
+		&cfg.PrysmRpcUrls,
 	}
 }
 
