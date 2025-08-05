@@ -218,6 +218,7 @@ func (cfg *LocalExecutionConfig) GetTitle() string {
 func (cfg *LocalExecutionConfig) GetParameters() []IParameter {
 	return []IParameter{
 		&cfg.ExecutionClient,
+		&cfg.HistoryMode,
 		&cfg.HttpPort,
 		&cfg.WebsocketPort,
 		&cfg.EnginePort,
