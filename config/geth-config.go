@@ -10,8 +10,8 @@ import (
 // Constants
 const (
 	// Tags
-	gethProdTag string = "ethereum/client-go:v1.16.1"
-	gethTestTag string = "ethereum/client-go:v1.16.1"
+	gethProdTag string = "ethereum/client-go:v1.16.2"
+	gethTestTag string = "ethereum/client-go:v1.16.2"
 )
 
 // Configuration for Geth
@@ -21,9 +21,6 @@ type GethConfig struct {
 
 	// Number of seconds EVM calls can run before timing out
 	EvmTimeout Parameter[uint64]
-
-	// The archive mode flag
-	ArchiveMode Parameter[bool]
 
 	// The Docker Hub tag for Geth
 	ContainerTag Parameter[string]
@@ -60,20 +57,6 @@ func NewGethConfig() *GethConfig {
 			},
 			Default: map[Network]uint64{
 				Network_All: 5,
-			},
-		},
-
-		ArchiveMode: Parameter[bool]{
-			ParameterCommon: &ParameterCommon{
-				ID:                 ids.GethArchiveModeID,
-				Name:               "Enable Archive Mode",
-				Description:        "When enabled, Geth will run in \"archive\" mode which means it can recreate the state of the chain for a previous block. This is required for manually generating the Merkle rewards tree.\n\nArchive mode takes several TB of disk space, so only enable it if you need it and can support it.",
-				AffectsContainers:  []ContainerID{ContainerID_ExecutionClient},
-				CanBeBlank:         false,
-				OverwriteOnUpgrade: false,
-			},
-			Default: map[Network]bool{
-				Network_All: false,
 			},
 		},
 
@@ -119,7 +102,6 @@ func (cfg *GethConfig) GetParameters() []IParameter {
 	return []IParameter{
 		&cfg.MaxPeers,
 		&cfg.EvmTimeout,
-		&cfg.ArchiveMode,
 		&cfg.ContainerTag,
 		&cfg.AdditionalFlags,
 	}

@@ -9,7 +9,7 @@ import (
 
 const (
 	// Tags
-	nimbusBnTag string = "statusim/nimbus-eth2:multiarch-v25.7.0"
+	nimbusBnTag string = "statusim/nimbus-eth2:multiarch-v25.7.1"
 )
 
 // Nimbus's pruning mode

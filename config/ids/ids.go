@@ -70,6 +70,7 @@ const (
 	LocalEcGethID          string = "geth"
 	LocalEcNethermindID    string = "nethermind"
 	LocalEcRethID          string = "reth"
+	LocalEcHistoryModeID   string = "historyMode"
 
 	// Lodestar
 	LodestarEnablePruningID string = "enablePruning"

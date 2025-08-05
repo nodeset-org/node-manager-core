@@ -6,10 +6,27 @@ import (
 	"github.com/rocket-pool/node-manager-core/config/ids"
 )
 
+// How Execution Clients should preserve chain history
+type ExecutionClientHistoryMode string
+
+const (
+	// Archive mode - storre everything and never prune, so state can be regenerated wherever
+	ExecutionClientHistoryMode_Archive ExecutionClientHistoryMode = "archive"
+
+	// Full mode - store chain info, but prune old state (default for most ECs)
+	ExecutionClientHistoryMode_Full ExecutionClientHistoryMode = "full"
+
+	// History expiry - same as full but also prune chain info from before the Merge to save some space
+	ExecutionClientHistoryMode_PostMerge ExecutionClientHistoryMode = "postMerge"
+)
+
 // Configuration for the Execution client
 type LocalExecutionConfig struct {
 	// The selected EC
 	ExecutionClient Parameter[ExecutionClient]
+
+	// The history mode to use in the EC
+	HistoryMode Parameter[ExecutionClientHistoryMode]
 
 	// The HTTP API port
 	HttpPort Parameter[uint16]
@@ -73,6 +90,41 @@ func NewLocalExecutionConfig() *LocalExecutionConfig {
 				}},
 			Default: map[Network]ExecutionClient{
 				Network_All: ExecutionClient_Geth,
+			},
+		},
+
+		HistoryMode: Parameter[ExecutionClientHistoryMode]{
+			ParameterCommon: &ParameterCommon{
+				ID:                 ids.LocalEcHistoryModeID,
+				Name:               "History Mode",
+				Description:        "Choose how your Execution client should store chain history on-disk. Each option balances historical retrieval with disk space usage differently. Highlight each option to learn more about it.",
+				AffectsContainers:  []ContainerID{ContainerID_ExecutionClient},
+				CanBeBlank:         false,
+				OverwriteOnUpgrade: false,
+			},
+			Options: []*ParameterOption[ExecutionClientHistoryMode]{
+				{
+					ParameterOptionCommon: &ParameterOptionCommon{
+						Name:        "Post-Merge (History Expiry)",
+						Description: "The Execution client will not store any chain data from before the Merge in accordance with EIP-4444 (History Expiry), and will prune all non-recent state. This is the default for most Execution clients since it provides all of the capabilities modules need but uses the least amount of disk space.",
+					},
+					Value: ExecutionClientHistoryMode_PostMerge,
+				}, {
+					ParameterOptionCommon: &ParameterOptionCommon{
+						Name:        "Full Node",
+						Description: "The Execution client will store all chain data from the beginning of the chain, but will prune all non-recent state to save disk space. This was the default before EIP-4444 was implemented but is now largely superseded by the Post-Merge mode. This is only recommended if you need to access transaction, block, or receipt information from before the Merge.",
+					},
+					Value: ExecutionClientHistoryMode_Full,
+				}, {
+					ParameterOptionCommon: &ParameterOptionCommon{
+						Name:        "Archive",
+						Description: "The Execution client will store everything from the beginning of the chain history, and will never prune any data. This is the most expensive option in terms of disk space, but allows you to regenerate any state at any point in time.\n\n[orange]WARNING: archive nodes are extremely expensive in terms of disk space, often requiring multiple terabytes just to sync! Please consult the documentation for your client to make sure you have enough disk space before selecting this option.",
+					},
+					Value: ExecutionClientHistoryMode_Archive,
+				},
+			},
+			Default: map[Network]ExecutionClientHistoryMode{
+				Network_All: ExecutionClientHistoryMode_Full,
 			},
 		},
 
