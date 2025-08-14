@@ -97,7 +97,7 @@ func NewLocalExecutionConfig() *LocalExecutionConfig {
 			ParameterCommon: &ParameterCommon{
 				ID:                 ids.LocalEcHistoryModeID,
 				Name:               "History Mode",
-				Description:        "Choose how your Execution client should store chain history on-disk. Each option balances historical retrieval with disk space usage differently. Highlight each option to learn more about it.",
+				Description:        "Choose how your Execution client should store chain history on-disk. Each option balances historical retrieval with disk space usage differently. Highlight each option to learn more about it.\n\n[orange]NOTE: Changing this mode will require resyncing your Execution client to apply the new mode. Please make sure you have a fallback setup configured before changing this setting, otherwise all of your active validators will be offline until the resync is complete!",
 				AffectsContainers:  []ContainerID{ContainerID_ExecutionClient},
 				CanBeBlank:         false,
 				OverwriteOnUpgrade: false,
