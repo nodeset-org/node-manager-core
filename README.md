@@ -8,7 +8,7 @@ Contributions are welcomed! Please see CONTRIBUTING.md for more details.
 
 ## Attribution and License History
 
-Early versions were adapted from a [prototype created by Rocket Pool](https://github.com/ocket-pool/node-manager-core).
+Early versions were adapted from a [prototype created by Rocket Pool](https://github.com/rocket-pool/node-manager-core).
 
 As of 2024, this work is now entirely based on work from NodeSet, Inc and community contributors.
 
