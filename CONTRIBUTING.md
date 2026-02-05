@@ -1,4 +1,4 @@
-Thank you for your interest in contributing to Hyperdrive! The process is simple: simply submit a PR to this repository and all contributions will be reviewed by NodeSet to ensure quality. Please note that by contributing to this project, you agree to the following contributor license agreement.
+Thank you for your interest in contributing to the NMC! The process is simple: simply submit a PR to this repository and all contributions will be reviewed by NodeSet to ensure quality. Please note that by contributing to this project, you agree to the following contributor license agreement.
 
 --------
 
